@@ -39,9 +39,3 @@ class CustomLogger:
         if self.logger.isEnabledFor(level):
             msg = msg.format(*args)
             self.logger._log(level, msg, args=(), **kwargs)
-
-
-from .logmod import logs  # noqa E402
-from . import common  # noqa E402
-from . import settings  # noqa E402
-from . import analysis  # noqa E402

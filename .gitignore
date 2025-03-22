@@ -1,2 +1,47 @@
+# Runs and output folders
+runs/
+_output/
+
+# Data folders
+data/
+analysis/
+
+# Python environment files
+.vscode/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Scripts
+run_download.py
+check.py
+
+# macOS specific files
+**/.DS_Store
+
+# Sublime Text project files
+*.sublime-project
+*.sublime-workspace
+
 # Instance specific files
 config
+
+# Pickle files
+*.pickle
+
+# Docker files
+docker-compose.debug.yml
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# venv
+/yt
+
+# temp video file in root
+/*.mp4
+
+# log files
+*.log
+*.out
