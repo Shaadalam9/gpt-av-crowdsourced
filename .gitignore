@@ -1,6 +1,7 @@
 # Runs and output folders
 runs/
 _output/
+output.csv
 
 # Data folders
 data/
@@ -45,3 +46,5 @@ Dockerfile
 # log files
 *.log
 *.out
+ollama_memory.json
+ollama_image_history.json
