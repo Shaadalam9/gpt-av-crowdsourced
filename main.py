@@ -66,8 +66,10 @@ class OllamaClient:
         """"
         Deletes the old history files.
         """
-        os.remove("ollama_image_history.json")
-        os.remove("ollama_memory.json")
+        if os.path.exists("ollama_image_history.json"):
+            os.remove("ollama_image_history.json")
+        if os.path.exists("ollama_memory.json"):
+            os.remove("ollama_memory.json")
 
 
     def is_port_open(self):
@@ -237,7 +239,7 @@ class OllamaClient:
             df = pd.DataFrame(columns=["image"])
 
         if self.model_name not in df.columns:
-            df[self.model_name] = ""
+            df[self.model_name] = pd.NA
 
         random.seed(common.get_configs("random_seed"))
         selected_images = random.sample(image_paths, len(image_paths))
@@ -253,8 +255,36 @@ class OllamaClient:
             full_response = ""
 
             if use_history:
-                history_context = self.memory.load_memory_variables({}).get("history", "")
-                full_prompt = f"{history_context}\nUser: {prompt}\nAssistant:"
+                # Format the conversation history (only content is extracted)
+                formatted_history = ""
+                for message in self.memory.chat_memory.messages:
+                    # You can customize the labels below as needed.
+                    if message.__class__.__name__ == "HumanMessage":
+                        formatted_history += f"History - Human: {message.content}\n"
+                    elif message.__class__.__name__ == "AIMessage":
+                        formatted_history += f"History - AI: {message.content}\n"
+
+                full_prompt = (
+                    f"{common.get_configs('base_prompt')}\n\n"
+                    f"{common.get_configs('history_intro')}\n"
+                    f"{formatted_history}\n"
+                    f"{common.get_configs('current_image_instruction')}"
+                )
+
+
+
+
+                # history_context = self.memory.load_memory_variables({}).get("history", "")
+                # history_intro = (
+                #     "Below is the conversation history from previous interactions, which may influence your decision:\n"
+                #     "{history_context}\n"
+                #     "Now, consider the current image details below."
+                #     )
+                # full_prompt = f"You are a pedestrian deciding whether to cross the road in front of this autonomous vehicle. " \
+                # f"{history_intro}\n\nCurrent Image Information:\n{prompt}"
+
+                # full_prompt = f"Previous responses: {history_context}\n\nUser: {prompt}\nAssistant:"
+                # full_prompt = f"{history_context}\nUser: {prompt}\nAssistant:"
             else:
                 full_prompt = prompt
 
@@ -308,7 +338,6 @@ class OllamaClient:
 
 # Entry point for standalone execution
 if __name__ == "__main__":
-    OllamaClient.delete_old_file()
     client = OllamaClient(
         model_name=common.get_configs("model_name"),
         use_history=common.get_configs("use_history"),
@@ -319,3 +348,5 @@ if __name__ == "__main__":
         prompt=prompt,
         image_folder=common.get_configs("data")
     )
+    if common.get_configs("retain_history_files"):
+        OllamaClient.delete_old_file()
