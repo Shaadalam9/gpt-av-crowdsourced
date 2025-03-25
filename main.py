@@ -63,14 +63,11 @@ class OllamaClient:
 
     @staticmethod
     def delete_old_file():
-        """"
-        Deletes the old history files.
-        """
+        """Deletes the old history files."""
         if os.path.exists("ollama_image_history.json"):
             os.remove("ollama_image_history.json")
         if os.path.exists("ollama_memory.json"):
             os.remove("ollama_memory.json")
-
 
     def is_port_open(self):
         """
@@ -258,7 +255,6 @@ class OllamaClient:
                 # Format the conversation history (only content is extracted)
                 formatted_history = ""
                 for message in self.memory.chat_memory.messages:
-                    # You can customize the labels below as needed.
                     if message.__class__.__name__ == "HumanMessage":
                         formatted_history += f"History - Human: {message.content}\n"
                     elif message.__class__.__name__ == "AIMessage":
@@ -270,21 +266,6 @@ class OllamaClient:
                     f"{formatted_history}\n"
                     f"{common.get_configs('current_image_instruction')}"
                 )
-
-
-
-
-                # history_context = self.memory.load_memory_variables({}).get("history", "")
-                # history_intro = (
-                #     "Below is the conversation history from previous interactions, which may influence your decision:\n"
-                #     "{history_context}\n"
-                #     "Now, consider the current image details below."
-                #     )
-                # full_prompt = f"You are a pedestrian deciding whether to cross the road in front of this autonomous vehicle. " \
-                # f"{history_intro}\n\nCurrent Image Information:\n{prompt}"
-
-                # full_prompt = f"Previous responses: {history_context}\n\nUser: {prompt}\nAssistant:"
-                # full_prompt = f"{history_context}\nUser: {prompt}\nAssistant:"
             else:
                 full_prompt = prompt
 
@@ -293,7 +274,7 @@ class OllamaClient:
                 "prompt": full_prompt,
                 "stream": False,
                 "images": [b64_image],
-                "options" : {
+                "options": {
                     "temperature": common.get_configs("temperature"),
                     "seed": common.get_configs("random_seed")
                 }
@@ -338,15 +319,21 @@ class OllamaClient:
 
 # Entry point for standalone execution
 if __name__ == "__main__":
-    client = OllamaClient(
-        model_name=common.get_configs("model_name"),
-        use_history=common.get_configs("use_history"),
-        max_memory_messages=common.get_configs("max_memory_messages")
-    )
+    # Retrieve the list of model names from the configuration.
+    model_list = common.get_configs("model_names")  # Expecting a list of model names
     prompt = common.get_configs("prompt")
-    client.generate(
-        prompt=prompt,
-        image_folder=common.get_configs("data")
-    )
-    if common.get_configs("retain_history_files"):
-        OllamaClient.delete_old_file()
+    
+    for model in model_list:
+        print(f"\n--- Processing with model: {model} ---\n")
+        client = OllamaClient(
+            model_name=model,
+            use_history=common.get_configs("use_history"),
+            max_memory_messages=common.get_configs("max_memory_messages")
+        )
+        client.generate(
+            prompt=prompt,
+            image_folder=common.get_configs("data")
+        )
+        # After finishing processing with the current model, delete old history files.
+        if common.get_configs("retain_history_files"):
+            OllamaClient.delete_old_file()
