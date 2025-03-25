@@ -61,6 +61,15 @@ class OllamaClient:
         self.ensure_model_available()
         self.load_memory()
 
+    @staticmethod
+    def delete_old_file():
+        """"
+        Deletes the old history files.
+        """
+        os.remove("ollama_image_history.json")
+        os.remove("ollama_memory.json")
+
+
     def is_port_open(self):
         """
         Check if the Ollama server port is open.
@@ -253,7 +262,11 @@ class OllamaClient:
                 "model": self.model_name,
                 "prompt": full_prompt,
                 "stream": False,
-                "images": [b64_image]
+                "images": [b64_image],
+                "options" : {
+                    "temperature": common.get_configs("temperature"),
+                    "seed": common.get_configs("random_seed")
+                }
             }
 
             try:
@@ -295,6 +308,7 @@ class OllamaClient:
 
 # Entry point for standalone execution
 if __name__ == "__main__":
+    OllamaClient.delete_old_file()
     client = OllamaClient(
         model_name=common.get_configs("model_name"),
         use_history=common.get_configs("use_history"),
