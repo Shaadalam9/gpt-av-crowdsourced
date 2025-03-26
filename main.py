@@ -322,7 +322,7 @@ if __name__ == "__main__":
     # Retrieve the list of model names from the configuration.
     model_list = common.get_configs("model_names")  # Expecting a list of model names
     prompt = common.get_configs("prompt")
-    
+
     for model in model_list:
         print(f"\n--- Processing with model: {model} ---\n")
         client = OllamaClient(
