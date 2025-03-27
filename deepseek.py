@@ -14,6 +14,10 @@ from langchain.schema import messages_from_dict, messages_to_dict
 # Disable parallelism in tokeniser warnings
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+output_folder = common.get_configs("output")
+os.makedirs(output_folder, exist_ok=True)
+
+
 class VisualQuestionAnswering:
     """
     A class that enables visual question answering using DeepSeek VL2.
@@ -34,7 +38,7 @@ class VisualQuestionAnswering:
         self.use_history = use_history
         self.first_run = True
         self.max_memory_messages = max_memory_messages
-        self.memory_file = "deepseek_memory.json"
+        self.memory_file = os.path.join(output_folder, "deepseek_memory.json")
         self.memory = ConversationBufferMemory(return_messages=True)
         self.load_memory()
         self._load_model_and_processor()
@@ -88,7 +92,7 @@ class VisualQuestionAnswering:
             str: The model's answer.
         """
 
-        output_csv = f"output_csv_{seed}"
+        output_csv = os.path.join(output_folder, f"output_csv_{seed}.csv")
 
         # Format conversation prompt with memory history if enabled
         if self.use_history and not self.first_run:
