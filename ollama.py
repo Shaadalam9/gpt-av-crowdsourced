@@ -32,7 +32,7 @@ class OllamaClient:
                  use_history=True,
                  max_memory_messages=6):
         """
-        Initialize the OllamaClient.
+        Initialise the OllamaClient.
 
         Args:
             model_name (str): Name of the LLM model to use.
@@ -42,12 +42,12 @@ class OllamaClient:
             max_memory_messages (int): Max number of memory messages to retain.
         """
         logs(show_level=common.get_configs("logger_level"), show_color=True)
-        self.logger = CustomLogger(__name__)
         self.template = common.get_configs('plotly_template')
 
         self.model_name = model_name
         self.host = host
         self.port = port
+        self.first_run = True
         self.url = f"http://{self.host}:{self.port}/api/generate"
         self.history_file = "ollama_image_history.json"
         self.memory_file = "ollama_memory.json"
@@ -251,7 +251,7 @@ class OllamaClient:
             b64_image = self.encode_image_to_base64(img_path)
             full_response = ""
 
-            if use_history:
+            if use_history and not self.first_run:
                 # Format the conversation history (only content is extracted)
                 formatted_history = ""
                 for message in self.memory.chat_memory.messages:
@@ -299,6 +299,7 @@ class OllamaClient:
                         self.memory.chat_memory.add_ai_message(full_response.strip())
                         self.memory.chat_memory.messages = self.memory.chat_memory.messages[-self.max_memory_messages:]
                         self.save_memory()
+                    self.first_run = False
 
                     self.log_interaction(prompt, img_path, full_response.strip())
 

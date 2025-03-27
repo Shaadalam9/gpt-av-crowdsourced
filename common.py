@@ -1,5 +1,6 @@
 """Contains various function used throughout this project."""
 # by Pavlo Bazilinskyy <pavlo.bazilinskyy@gmail.com>
+from typing import Dict
 import os
 import json
 import pickle
@@ -110,3 +111,11 @@ def load_from_p(file, desription_data='data'):
     logger.info('Loaded ' + desription_data + ' from pickle file {}.',
                 file)
     return data
+
+
+def get_secrets(entry_name: str, secret_file_name: str = 'secret') -> Dict[str, str]:
+    """
+    Open the secrets file and return the requested entry.
+    """
+    with open(os.path.join(root_dir, secret_file_name)) as f:
+        return json.load(f)[entry_name]
