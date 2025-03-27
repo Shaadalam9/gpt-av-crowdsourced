@@ -48,3 +48,6 @@ Dockerfile
 *.out
 ollama_memory.json
 ollama_image_history.json
+
+# secret file
+secret
