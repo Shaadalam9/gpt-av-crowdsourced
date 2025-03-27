@@ -17,6 +17,9 @@ import hashlib
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import messages_from_dict, messages_to_dict
 
+output_folder = common.get_configs("output")
+os.makedirs(output_folder, exist_ok=True)
+
 
 class OllamaClient:
     """
@@ -48,9 +51,9 @@ class OllamaClient:
         self.port = port
         self.first_run = True
         self.url = f"http://{self.host}:{self.port}/api/generate"
-        self.history_file = "ollama_image_history.json"
-        self.memory_file = "ollama_memory.json"
-        self.output_file = "output.csv"
+        self.history_file = os.path.join(output_folder, "ollama_image_history.json")
+        self.memory_file = os.path.join(output_folder, "ollama_memory.json")
+        self.output_file = os.path.join(output_folder, "output.csv")
 
         self.use_history = use_history
         self.max_memory_messages = max_memory_messages
@@ -62,11 +65,16 @@ class OllamaClient:
 
     @staticmethod
     def delete_old_file():
-        """Deletes the old history files."""
-        if os.path.exists("ollama_image_history.json"):
-            os.remove("ollama_image_history.json")
-        if os.path.exists("ollama_memory.json"):
-            os.remove("ollama_memory.json")
+        """
+        Deletes the old history files.
+        """
+
+        if os.path.exists(os.path.join(output_folder, "ollama_image_history.json")):
+            os.remove(os.path.join(output_folder, "ollama_image_history.json"))
+
+        if os.path.exists(os.path.join(output_folder, "ollama_memory.json")):
+            os.remove(os.path.join(output_folder, "ollama_memory.json"))
+
 
     def is_port_open(self):
         """
@@ -298,6 +306,7 @@ class OllamaClient:
                         self.memory.chat_memory.add_ai_message(full_response.strip())
                         self.memory.chat_memory.messages = self.memory.chat_memory.messages[-self.max_memory_messages:]
                         self.save_memory()
+                    
                     self.first_run = False
 
                     self.log_interaction(prompt, img_path, full_response.strip())
@@ -313,8 +322,10 @@ class OllamaClient:
             except requests.exceptions.RequestException as e:
                 print(f"Failed to send request to Ollama: {e}")
 
-        df.to_csv(f'output_csv_{seed}', index=False)
-        print(f"\nSaved results to {output_csv}")
+        output_path = os.path.join(output_folder, f"output_csv_{seed}.csv")
+        os.makedirs(output_folder, exist_ok=True)
+        df.to_csv(output_path, index=False)
+        print(f"\nSaved results to {output_path}")
 
 
 # Entry point for standalone execution

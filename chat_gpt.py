@@ -13,6 +13,9 @@ from langchain.schema import messages_from_dict, messages_to_dict
 logs(show_level=common.get_configs("logger_level"), show_color=True)
 logger = CustomLogger(__name__)  # use custom logger
 
+output_folder = common.get_configs("output")
+os.makedirs(output_folder, exist_ok=True)
+
 
 class ImageAnalyser:
     """
@@ -37,7 +40,7 @@ class ImageAnalyser:
         self.client = OpenAI(api_key=common.get_secrets("OPENAI_API_KEY"))
         self.use_history = use_history
         self.max_memory_messages = max_memory_messages
-        self.memory_file = "chatgpt_memory.json"
+        self.memory_file = os.path.join(output_folder, "chatgpt_memory.json")
         self.memory = ConversationBufferMemory(return_messages=True)
         self.load_memory()
 
@@ -93,7 +96,8 @@ class ImageAnalyser:
         Returns:
             str or None: AI's response to the image, or None if an error occurs.
         """
-        output_csv = f"output_csv_{seed}"
+        output_csv = os.path.join(output_folder, f"output_csv_{seed}.csv")
+        os.makedirs(output_folder, exist_ok=True)
         base64_image = self.encode_image()
 
         # Build prompt including history if enabled
