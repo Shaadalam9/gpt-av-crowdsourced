@@ -27,7 +27,7 @@ import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
 import torch.distributed as dist
-from einops import repeat
+from einops import repeat  # type: ignore  # noqa: F401
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
@@ -36,7 +36,7 @@ from transformers.cache_utils import Cache, DynamicCache
 from transformers.modeling_attn_mask_utils import _prepare_4d_causal_attention_mask
 from transformers.models.llama.modeling_llama import (
     LlamaAttention,
-    LlamaFlashAttention2
+    LlamaFlashAttention2  # type: ignore
 )
 from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
@@ -61,8 +61,8 @@ from transformers.utils.import_utils import is_torch_fx_available
 from .configuration_deepseek import DeepseekV2Config
 
 if is_flash_attn_2_available():
-    from flash_attn import flash_attn_func, flash_attn_varlen_func
-    from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa
+    from flash_attn import flash_attn_func, flash_attn_varlen_func # type: ignore # noqa: E261
+    from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # type: ignore # noqa
 
 # This makes `_prepare_4d_causal_attention_mask` a leaf function in the FX graph.
 # It means that the function will not be traced through and simply appear as a node in the graph.
@@ -82,7 +82,7 @@ def _get_unpad_data(attention_mask):
     indices = torch.nonzero(attention_mask.flatten(), as_tuple=False).flatten()
     max_seqlen_in_batch = seqlens_in_batch.max().item()
     cu_seqlens = F.pad(
-        torch.cumsum(seqlens_in_batch, dim=0, dtype=torch.torch.int32), (1, 0)
+        torch.cumsum(seqlens_in_batch, dim=0, dtype=torch.torch.int32), (1, 0)  # type: ignore
     )
     return (
         indices,
@@ -108,7 +108,7 @@ class DeepseekV2RMSNorm(nn.Module):
         return self.weight * hidden_states.to(input_dtype)
 
 
-ALL_LAYERNORM_LAYERS.append(DeepseekV2RMSNorm)
+ALL_LAYERNORM_LAYERS.append(DeepseekV2RMSNorm)  # type: ignore
 
 
 class DeepseekV2RotaryEmbedding(nn.Module):
@@ -134,10 +134,10 @@ class DeepseekV2RotaryEmbedding(nn.Module):
     def _set_cos_sin_cache(self, seq_len, device, dtype):
         self.max_seq_len_cached = seq_len
         t = torch.arange(
-            self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype
+            self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype  # type: ignore
         )
 
-        freqs = torch.outer(t, self.inv_freq.to(t.device))
+        freqs = torch.outer(t, self.inv_freq.to(t.device))  # type: ignore
         # Different from paper, but it uses a different permutation in order to obtain the same calculation
         emb = torch.cat((freqs, freqs), dim=-1)
         self.register_buffer("cos_cached", emb.cos().to(dtype), persistent=False)
@@ -149,8 +149,8 @@ class DeepseekV2RotaryEmbedding(nn.Module):
             self._set_cos_sin_cache(seq_len=seq_len, device=x.device, dtype=x.dtype)
 
         return (
-            self.cos_cached[:seq_len].to(dtype=x.dtype),
-            self.sin_cached[:seq_len].to(dtype=x.dtype),
+            self.cos_cached[:seq_len].to(dtype=x.dtype),  # type: ignore
+            self.sin_cached[:seq_len].to(dtype=x.dtype),  # type: ignore
         )
 
 
@@ -172,11 +172,11 @@ class DeepseekV2LinearScalingRotaryEmbedding(DeepseekV2RotaryEmbedding):
     def _set_cos_sin_cache(self, seq_len, device, dtype):
         self.max_seq_len_cached = seq_len
         t = torch.arange(
-            self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype
+            self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype  # type: ignore
         )
         t = t / self.scaling_factor
 
-        freqs = torch.outer(t, self.inv_freq)
+        freqs = torch.outer(t, self.inv_freq)  # type: ignore
         # Different from paper, but it uses a different permutation in order to obtain the same calculation
         emb = torch.cat((freqs, freqs), dim=-1)
         self.register_buffer("cos_cached", emb.cos().to(dtype), persistent=False)
@@ -185,7 +185,8 @@ class DeepseekV2LinearScalingRotaryEmbedding(DeepseekV2RotaryEmbedding):
 
 # Copied from transformers.models.llama.modeling_llama.LlamaDynamicNTKScalingRotaryEmbedding with Llama->DeepseekV2
 class DeepseekV2DynamicNTKScalingRotaryEmbedding(DeepseekV2RotaryEmbedding):
-    """DeepseekV2RotaryEmbedding extended with Dynamic NTK scaling. Credits to the Reddit users /u/bloc97 and /u/emozilla"""
+    """DeepseekV2RotaryEmbedding extended with Dynamic NTK scaling.
+    Credits to the Reddit users /u/bloc97 and /u/emozilla"""
 
     def __init__(
         self,
@@ -212,10 +213,10 @@ class DeepseekV2DynamicNTKScalingRotaryEmbedding(DeepseekV2RotaryEmbedding):
             self.register_buffer("inv_freq", inv_freq, persistent=False)
 
         t = torch.arange(
-            self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype
+            self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype  # type: ignore
         )
 
-        freqs = torch.outer(t, self.inv_freq)
+        freqs = torch.outer(t, self.inv_freq)  # type: ignore
         # Different from paper, but it uses a different permutation in order to obtain the same calculation
         emb = torch.cat((freqs, freqs), dim=-1)
         self.register_buffer("cos_cached", emb.cos().to(dtype), persistent=False)
@@ -314,8 +315,8 @@ class DeepseekV2YarnRotaryEmbedding(DeepseekV2RotaryEmbedding):
         freqs = torch.outer(t, inv_freq)
 
         _mscale = float(
-            yarn_get_mscale(self.scaling_factor, self.mscale)
-            / yarn_get_mscale(self.scaling_factor, self.mscale_all_dim)
+            yarn_get_mscale(self.scaling_factor, self.mscale)  # type: ignore
+            / yarn_get_mscale(self.scaling_factor, self.mscale_all_dim)  # type: ignore
         )
 
         emb = torch.cat((freqs, freqs), dim=-1)
@@ -331,7 +332,7 @@ class DeepseekV2YarnRotaryEmbedding(DeepseekV2RotaryEmbedding):
 def rotate_half(x):
     """Rotates half the hidden dims of the input."""
     x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
+    x2 = x[..., x.shape[-1] // 2:]
     return torch.cat((-x2, x1), dim=-1)
 
 
@@ -423,7 +424,7 @@ class MoEGate(nn.Module):
 
     def forward(self, hidden_states):
         bsz, seq_len, h = hidden_states.shape
-        ### compute gating score
+        # compute gating score
         hidden_states = hidden_states.view(-1, h)
         logits = F.linear(
             hidden_states.type(torch.float32), self.weight.type(torch.float32), None
@@ -437,7 +438,7 @@ class MoEGate(nn.Module):
                 f"insupportable scoring function for MoE gating: {self.scoring_func}"
             )
 
-        ### select top-k experts
+        # select top-k experts
         if self.topk_method == "greedy":
             topk_weight, topk_idx = torch.topk(
                 scores, k=self.top_k, dim=-1, sorted=False
@@ -468,7 +469,7 @@ class MoEGate(nn.Module):
             assert not self.training
             scores_for_choice = scores.view(bsz * seq_len, -1) + self.e_score_correction_bias.unsqueeze(0)
             group_scores = (
-                scores_for_choice.view(bsz * seq_len, self.n_group, -1).topk(2, dim=-1)[0].sum(dim = -1)
+                scores_for_choice.view(bsz * seq_len, self.n_group, -1).topk(2, dim=-1)[0].sum(dim=-1)
             )  # [n, n_group]
             group_idx = torch.topk(
                 group_scores, k=self.topk_group, dim=-1, sorted=False
@@ -490,13 +491,13 @@ class MoEGate(nn.Module):
             )
             topk_weight = scores.gather(1, topk_idx)
 
-        ### norm gate to sum 1
+        # norm gate to sum 1
         if self.top_k > 1 and self.norm_topk_prob:
             denominator = topk_weight.sum(dim=-1, keepdim=True) + 1e-20
             topk_weight = topk_weight / denominator * self.routed_scaling_factor
         else:
             topk_weight = topk_weight * self.routed_scaling_factor
-        ### expert-level computation auxiliary loss
+        # expert-level computation auxiliary loss
         if self.training and self.alpha > 0.0:
             scores_for_aux = scores
             aux_topk = self.top_k
@@ -575,7 +576,7 @@ class DeepseekV2MoE(nn.Module):
                         else None
                     )
                     for i in range(config.n_routed_experts)
-                ]
+                ]  # type: ignore
             )
         else:
             self.ep_size = 1
@@ -653,7 +654,7 @@ class DeepseekV2MoE(nn.Module):
             gatherd_idxs = np.zeros(shape=(gathered_tokens.shape[0],), dtype=np.int32)
             s = 0
             for i, k in enumerate(tokens_per_expert_group.cpu().numpy()):
-                gatherd_idxs[s : s + k] = i % self.experts_per_rank
+                gatherd_idxs[s: s + k] = i % self.experts_per_rank
                 s += k
             gatherd_idxs = gatherd_idxs.argsort()
             sorted_tokens = gathered_tokens[gatherd_idxs]
@@ -719,7 +720,7 @@ class DeepseekV2Attention(nn.Module):
         self.config = config
         self.layer_idx = layer_idx
         if layer_idx is None:
-            logger.warning_once(
+            logger.warning_once(  # type: ignore
                 f"Instantiating {self.__class__.__name__} without passing `layer_idx` is not recommended and will "
                 "to errors during the forward call, if caching is used. Please make sure to provide a `layer_idx` "
                 "when creating this class."
@@ -786,7 +787,7 @@ class DeepseekV2Attention(nn.Module):
             self.rotary_emb = DeepseekV2RotaryEmbedding(
                 self.qk_rope_head_dim,
                 max_position_embeddings=self.max_position_embeddings,
-                base=self.rope_theta,
+                base=self.rope_theta,  # type: ignore
             )
         else:
             scaling_type = self.config.rope_scaling["type"]
@@ -796,14 +797,14 @@ class DeepseekV2Attention(nn.Module):
                     self.qk_rope_head_dim,
                     max_position_embeddings=self.max_position_embeddings,
                     scaling_factor=scaling_factor,
-                    base=self.rope_theta,
+                    base=self.rope_theta,  # type: ignore
                 )
             elif scaling_type == "dynamic":
                 self.rotary_emb = DeepseekV2DynamicNTKScalingRotaryEmbedding(
                     self.qk_rope_head_dim,
                     max_position_embeddings=self.max_position_embeddings,
                     scaling_factor=scaling_factor,
-                    base=self.rope_theta,
+                    base=self.rope_theta,  # type: ignore
                 )
             elif scaling_type == "yarn":
                 kwargs = {
@@ -821,7 +822,7 @@ class DeepseekV2Attention(nn.Module):
                     self.qk_rope_head_dim,
                     max_position_embeddings=self.max_position_embeddings,
                     scaling_factor=scaling_factor,
-                    base=self.rope_theta,
+                    base=self.rope_theta,  # type: ignore
                     **kwargs,
                 )
             else:
@@ -846,7 +847,8 @@ class DeepseekV2Attention(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         if "padding_mask" in kwargs:
             warnings.warn(
-                "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"
+                "Passing `padding_mask` is deprecated and will be removed in v4.37."
+                "Please make sure use `attention_mask` instead.`"
             )
         bsz, q_len, _ = hidden_states.size()
 
@@ -871,8 +873,8 @@ class DeepseekV2Attention(nn.Module):
             if self.layer_idx is None:
                 raise ValueError(
                     f"The cache structure has changed since version v4.36. If you are using {self.__class__.__name__} "
-                    "for auto-regressive decoding with k/v caching, please make sure to initialize the attention class "
-                    "with a layer index."
+                    "for auto-regressive decoding with k/v caching, please make sure to initialize the attention class"
+                    " with a layer index."
                 )
             kv_seq_len += past_key_value.get_usable_length(kv_seq_len, self.layer_idx)
 
@@ -882,7 +884,8 @@ class DeepseekV2Attention(nn.Module):
         if past_key_value is not None:
             cache_kwargs = {"sin": sin, "cos": cos}  # Specific to RoPE models
             compressed_kv = compressed_kv.unsqueeze(1)
-            k_pe, compressed_kv = past_key_value.update(k_pe, compressed_kv, self.layer_idx, cache_kwargs)
+            k_pe, compressed_kv = past_key_value.update(k_pe,
+                                                        compressed_kv, self.layer_idx, cache_kwargs)  # type: ignore
             compressed_kv = compressed_kv.squeeze(1)
 
         kv_b_proj = self.kv_b_proj.weight.view(self.num_heads, -1, self.kv_lora_rank)
@@ -931,23 +934,27 @@ class DeepseekV2Attention(nn.Module):
         if not output_attentions:
             attn_weights = None
 
-        return attn_output, attn_weights, past_key_value
+        return attn_output, attn_weights, past_key_value  # type: ignore
 
 
 # Copied from transformers.models.llama.modeling_llama.LlamaFlashAttention2 with Llama->DeepseekV2
 class DeepseekV2FlashAttention2(DeepseekV2Attention):
     """
-    DeepseekV2 flash attention module. This module inherits from `DeepseekV2Attention` as the weights of the module stays
-    untouched. The only required change would be on the forward pass where it needs to correctly call the public API of
-    flash attention and deal with padding tokens in case the input contains any of them.
+    DeepseekV2 flash attention module. This module inherits from `DeepseekV2Attention` as the weights 
+    of the module stays untouched. The only required change would be on the forward pass where it needs to
+    correctly call the public API of flash attention and deal with padding tokens
+    in case the input contains any of them.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # TODO: Should be removed once Flash Attention for RoCm is bumped to 2.1.
-        # flash_attn<2.1 generates top-left aligned causal mask, while what is needed here is bottom-right alignement, that was made default for flash_attn>=2.1. This attribute is used to handle this difference. Reference: https://github.com/Dao-AILab/flash-attention/releases/tag/v2.1.0.
-        # Beware that with flash_attn<2.1, using q_seqlen != k_seqlen (except for the case q_seqlen == 1) produces a wrong mask (top-left).
+        # flash_attn<2.1 generates top-left aligned causal mask, while what is needed here is bottom-right alignement,
+        # that was made default for flash_attn>=2.1. This attribute is used to handle this difference.
+        # Reference: https://github.com/Dao-AILab/flash-attention/releases/tag/v2.1.0.
+        # Beware that with flash_attn<2.1, using q_seqlen != k_seqlen (except for the case q_seqlen == 1)
+        # produces a wrong mask (top-left).
         self._flash_attn_uses_top_left_mask = not is_flash_attn_greater_or_equal_2_10()
 
     def forward(
@@ -963,7 +970,8 @@ class DeepseekV2FlashAttention2(DeepseekV2Attention):
         # DeepseekV2FlashAttention2 attention does not support output_attentions
         if "padding_mask" in kwargs:
             warnings.warn(
-                "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"
+                "Passing `padding_mask` is deprecated and will be removed in v4.37."
+                "Please make sure use `attention_mask` instead.`"
             )
 
             # overwrite attention_mask with padding_mask
@@ -1010,11 +1018,11 @@ class DeepseekV2FlashAttention2(DeepseekV2Attention):
 
         query_states = k_pe.new_empty(bsz, self.num_heads, q_len, self.q_head_dim)
         query_states[:, :, :, : self.qk_nope_head_dim] = q_nope
-        query_states[:, :, :, self.qk_nope_head_dim :] = q_pe
+        query_states[:, :, :, self.qk_nope_head_dim:] = q_pe
 
         key_states = k_pe.new_empty(bsz, self.num_heads, q_len, self.q_head_dim)
         key_states[:, :, :, : self.qk_nope_head_dim] = k_nope
-        key_states[:, :, :, self.qk_nope_head_dim :] = k_pe
+        key_states[:, :, :, self.qk_nope_head_dim:] = k_pe
 
         if self.q_head_dim != self.v_head_dim:
             value_states = F.pad(value_states, [0, self.q_head_dim - self.v_head_dim])
@@ -1023,10 +1031,11 @@ class DeepseekV2FlashAttention2(DeepseekV2Attention):
         if past_key_value is not None:
             cache_kwargs = {"sin": sin, "cos": cos}  # Specific to RoPE models
             key_states, value_states = past_key_value.update(
-                key_states, value_states, self.layer_idx, cache_kwargs
+                key_states, value_states, self.layer_idx, cache_kwargs  # type: ignore
             )
 
-        # TODO: These transpose are quite inefficient but Flash Attention requires the layout [batch_size, sequence_length, num_heads, head_dim]. We would need to refactor the KV cache
+        # TODO: These transpose are quite inefficient but Flash Attention requires the layout
+        # [batch_size, sequence_length, num_heads, head_dim]. We would need to refactor the KV cache
         # to be able to avoid many of these transpose/reshape/view.
         query_states = query_states.transpose(1, 2)
         key_states = key_states.transpose(1, 2)
@@ -1054,9 +1063,9 @@ class DeepseekV2FlashAttention2(DeepseekV2Attention):
                     else self.q_a_proj.weight.dtype
                 )
 
-            logger.warning_once(
+            logger.warning_once(  # type: ignore
                 f"The input hidden states seems to be silently casted in float32, this might be related to"
-                f" the fact you have upcasted embedding or layer norm layers in float32. We will cast back the input in"
+                f"the fact you have upcasted embedding or layer norm layers in float32. We will cast back the input in"
                 f" {target_dtype}."
             )
 
@@ -1084,7 +1093,7 @@ class DeepseekV2FlashAttention2(DeepseekV2Attention):
         if not output_attentions:
             attn_weights = None
 
-        return attn_output, attn_weights, past_key_value
+        return attn_output, attn_weights, past_key_value  # type: ignore
 
     def _flash_attention_forward(
         self,
@@ -1118,7 +1127,8 @@ class DeepseekV2FlashAttention2(DeepseekV2Attention):
         if not self._flash_attn_uses_top_left_mask:
             causal = self.is_causal
         else:
-            # TODO: Remove the `query_length != 1` check once Flash Attention for RoCm is bumped to 2.1. For details, please see the comment in DeepseekV2FlashAttention2 __init__.
+            # TODO: Remove the `query_length != 1` check once Flash Attention for RoCm is bumped to 2.1.
+            # For details, please see the comment in DeepseekV2FlashAttention2 __init__.
             causal = self.is_causal and query_length != 1
 
         # Contains at least one padding token in the sequence
@@ -1282,7 +1292,8 @@ class DeepseekV2DecoderLayer(nn.Module):
         """
         if "padding_mask" in kwargs:
             warnings.warn(
-                "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"
+                "Passing `padding_mask` is deprecated and will be removed in v4.37."
+                "Please make sure use `attention_mask` instead.`"
             )
         residual = hidden_states
 
@@ -1314,7 +1325,7 @@ class DeepseekV2DecoderLayer(nn.Module):
         if use_cache:
             outputs += (present_key_value,)
 
-        return outputs
+        return outputs  # type: ignore
 
 
 DeepseekV2_START_DOCSTRING = r"""
@@ -1471,7 +1482,7 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
     @add_start_docstrings_to_model_forward(DeepseekV2_INPUTS_DOCSTRING)
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        input_ids: torch.LongTensor = None,  # type: ignore
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -1512,8 +1523,9 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`transformers."
+                logger.warning_once(  # type: ignore
+                    "`use_cache=True` is incompatible with gradient checkpointing."
+                    "Setting `use_cache=False`transformers."
                 )
                 use_cache = False
 
@@ -1521,8 +1533,8 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
         if use_cache:
             use_legacy_cache = not isinstance(past_key_values, Cache)
             if use_legacy_cache:
-                past_key_values = DynamicCache.from_legacy_cache(past_key_values)
-            past_key_values_length = past_key_values.get_usable_length(seq_length)
+                past_key_values = DynamicCache.from_legacy_cache(past_key_values)  # type: ignore
+            past_key_values_length = past_key_values.get_usable_length(seq_length)  # type: ignore
 
         if position_ids is None:
             device = input_ids.device if input_ids is not None else inputs_embeds.device
@@ -1531,8 +1543,8 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
                 seq_length + past_key_values_length,
                 dtype=torch.long,
                 device=device,
-            )
-            position_ids = position_ids.unsqueeze(0)
+            )  # type: ignore
+            position_ids = position_ids.unsqueeze(0)  # type: ignore
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
@@ -1549,9 +1561,9 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
             attention_mask = _prepare_4d_causal_attention_mask(
                 attention_mask,
                 (batch_size, seq_length),
-                inputs_embeds,
+                inputs_embeds,  # type: ignore
                 past_key_values_length,
-            )
+            )  # type: ignore
 
         # embed positions
         hidden_states = inputs_embeds
@@ -1563,7 +1575,7 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
 
         for decoder_layer in self.layers:
             if output_hidden_states:
-                all_hidden_states += (hidden_states,)
+                all_hidden_states += (hidden_states,)  # type: ignore
 
             if self.gradient_checkpointing and self.training:
                 layer_outputs = self._gradient_checkpointing_func(
@@ -1591,18 +1603,18 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
                 next_decoder_cache = layer_outputs[2 if output_attentions else 1]
 
             if output_attentions:
-                all_self_attns += (layer_outputs[1],)
+                all_self_attns += (layer_outputs[1],)  # type: ignore
 
         hidden_states = self.norm(hidden_states)
 
         # add hidden states from the last decoder layer
         if output_hidden_states:
-            all_hidden_states += (hidden_states,)
+            all_hidden_states += (hidden_states,)  # type: ignore
 
         next_cache = None
         if use_cache:
             next_cache = (
-                next_decoder_cache.to_legacy_cache()
+                next_decoder_cache.to_legacy_cache()  # type: ignore
                 if use_legacy_cache
                 else next_decoder_cache
             )
@@ -1615,7 +1627,7 @@ class DeepseekV2Model(DeepseekV2PreTrainedModel):
         return BaseModelOutputWithPast(
             last_hidden_state=hidden_states,
             past_key_values=next_cache,
-            hidden_states=all_hidden_states,
+            hidden_states=all_hidden_states,  # type: ignore
             attentions=all_self_attns,
         )
 
@@ -1656,7 +1668,7 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel):
     )
     def forward(
             self,
-            input_ids: torch.LongTensor = None,
+            input_ids: torch.LongTensor = None,  # type: ignore
             attention_mask: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.LongTensor] = None,
             past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -1673,7 +1685,8 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel):
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
                 Labels for computing the masked language modeling loss. Indices should either be in `[0, transformers.,
                 config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
-                (masked), the loss is only computed for the tokens with labels in `[0, transformers., config.vocab_size]`.
+                (masked), the loss is only computed for the tokens with labels in
+                `[0, transformers., config.vocab_size]`.
 
         Returns:
 
@@ -1763,7 +1776,7 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel):
             if isinstance(past_key_values, Cache):
                 cache_length = past_key_values.get_seq_length()
                 past_length = past_key_values.seen_tokens
-                max_cache_length = past_key_values.get_max_length()
+                max_cache_length = past_key_values.get_max_length()  # type: ignore
             else:
                 cache_length = past_length = past_key_values[0][0].shape[2]
                 max_cache_length = None
@@ -1796,7 +1809,7 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel):
             if past_key_values:
                 position_ids = position_ids[:, -input_ids.shape[1]:]
 
-        if self.generation_config.cache_implementation == "static":
+        if self.generation_config.cache_implementation == "static":  # type: ignore
             # generation with static cache
             cache_position = kwargs.get("cache_position", None)
             if cache_position is None:
@@ -1808,14 +1821,16 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel):
 
         # TODO @gante we should only keep a `cache_position` in generate, and do +=1.
         # same goes for position ids. Could also help with continued generation.
-        cache_position = torch.arange(past_length, past_length + position_ids.shape[-1], device=position_ids.device)
+        cache_position = torch.arange(past_length,  # type: ignore
+                                      past_length + position_ids.shape[-1], device=position_ids.device)
 
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and past_key_values is None:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:
             # The `contiguous()` here is necessary to have a static stride during decoding. torchdynamo otherwise
-            # recompiles graphs as the stride of the inputs is a guard. Ref: https://github.com/huggingface/transformers/pull/29114
+            # recompiles graphs as the stride of the inputs is a guard.
+            # Ref: https://github.com/huggingface/transformers/pull/29114
             # TODO: use `next_tokens` directly instead.
             model_inputs = {"input_ids": input_ids.contiguous()}
 
@@ -1847,8 +1862,8 @@ class DeepseekV2ForCausalLM(DeepseekV2PreTrainedModel):
     """
     The DeepseekV2 Model transformer with a sequence classification head on top (linear layer).
 
-    [`DeepseekV2ForSequenceClassification`] uses the last token in order to do the classification, as other causal models
-    (e.g. GPT-2) do.
+    [`DeepseekV2ForSequenceClassification`] uses the last token in order to do the classification,
+    as other causal models(e.g. GPT-2) do.
 
     Since it does classification on the last token, it requires to know the position of the last token. If a
     `pad_token_id` is defined in the configuration, it finds the last token that is not a padding token in each row. If
@@ -1877,7 +1892,7 @@ class DeepseekV2ForSequenceClassification(DeepseekV2PreTrainedModel):
     @add_start_docstrings_to_model_forward(DeepseekV2_INPUTS_DOCSTRING)
     def forward(
             self,
-            input_ids: torch.LongTensor = None,
+            input_ids: torch.LongTensor = None,  # type: ignore
             attention_mask: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.LongTensor] = None,
             past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -1937,12 +1952,12 @@ class DeepseekV2ForSequenceClassification(DeepseekV2PreTrainedModel):
 
         loss = None
         if labels is not None:
-            labels = labels.to(logits.device)
+            labels = labels.to(logits.device)  # type: ignore
             if self.config.problem_type is None:
                 if self.num_labels == 1:
                     self.config.problem_type = "regression"
                 elif self.num_labels > 1 and (
-                        labels.dtype == torch.long or labels.dtype == torch.int
+                        labels.dtype == torch.long or labels.dtype == torch.int  # type: ignore
                 ):
                     self.config.problem_type = "single_label_classification"
                 else:
@@ -1951,13 +1966,13 @@ class DeepseekV2ForSequenceClassification(DeepseekV2PreTrainedModel):
             if self.config.problem_type == "regression":
                 loss_fct = MSELoss()
                 if self.num_labels == 1:
-                    loss = loss_fct(pooled_logits.squeeze(), labels.squeeze())
+                    loss = loss_fct(pooled_logits.squeeze(), labels.squeeze())  # type: ignore
                 else:
                     loss = loss_fct(pooled_logits, labels)
             elif self.config.problem_type == "single_label_classification":
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(
-                    pooled_logits.view(-1, self.num_labels), labels.view(-1)
+                    pooled_logits.view(-1, self.num_labels), labels.view(-1)  # type: ignore
                 )
             elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()

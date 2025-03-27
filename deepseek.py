@@ -3,9 +3,7 @@ import json
 import pandas as pd
 import torch
 import common
-from custom_logger import CustomLogger
-from logmod import logs
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM  # noqa:F401
 from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
 from deepseek_vl2.utils.io import load_pil_images
 from langchain.memory import ConversationBufferMemory
@@ -13,6 +11,7 @@ from langchain.schema import messages_from_dict, messages_to_dict
 
 # Disable parallelism in tokeniser warnings
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 
 class VisualQuestionAnswering:
     """
@@ -67,12 +66,12 @@ class VisualQuestionAnswering:
         Transfers the model to the correct device with bfloat16 precision.
         """
         self.processor = DeepseekVLV2Processor.from_pretrained(self.model_path)
-        self.tokenizer = self.processor.tokenizer
+        self.tokenizer = self.processor.tokenizer  # type: ignore
 
         self.model = DeepseekVLV2ForCausalLM.from_pretrained(
             self.model_path, trust_remote_code=True
         )
-        self.model = self.model.to(torch.bfloat16).to(self.device).eval()
+        self.model = self.model.to(torch.bfloat16).to(self.device).eval()  # type: ignore
 
     def ask_question(self, image_path, question, model_name="deepseek-vl2", seed=42):
         """
@@ -120,12 +119,11 @@ class VisualQuestionAnswering:
 
         # Load and prepare image for processing
         pil_images = load_pil_images(conversation)
-        inputs = self.processor(
-            conversations=conversation,
-            images=pil_images,
-            force_batchify=True,
-            system_prompt=""
-        ).to(self.model.device)
+        inputs = self.processor(conversations=conversation,
+                                images=pil_images,
+                                force_batchify=True,
+                                system_prompt=""
+                                ).to(self.model.device)  # type: ignore
 
         # Prepare image and text input embeddings
         inputs_embeds = self.model.prepare_inputs_embeds(**inputs)
@@ -174,6 +172,7 @@ class VisualQuestionAnswering:
         df.to_csv(output_csv, index=False)
         print(f"\nSaved DeepSeek-VL2 output for {image_name} to {output_csv}")
         return answer
+
 
 # Example usage
 if __name__ == "__main__":

@@ -1,16 +1,16 @@
-from attrdict import AttrDict
+from attrdict import AttrDict  # type: ignore # noqa: F401
 from dataclasses import dataclass
 import logging
 import gc
 
-from einops import rearrange, repeat
-from typing import Optional, List, Tuple, Callable, Union
+from einops import rearrange, repeat  # type: ignore
+from typing import Optional, List, Tuple, Callable, Union  # noqa: F401
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from transformers.utils import (
+from transformers.utils import (  # noqa: F401
     add_start_docstrings,
     add_start_docstrings_to_model_forward,
 )
@@ -21,7 +21,7 @@ from transformers import (
     AutoModelForCausalLM,
     PreTrainedModel
 )
-from transformers.utils import logging
+from transformers.utils import logging  # noqa: F811
 
 from .siglip_vit import VisionTransformer
 from .configuration_deepseek import DeepseekV2Config
@@ -49,7 +49,7 @@ class MlpProjector(nn.Module):
             mlp_depth = cfg.depth
             modules = [nn.Linear(cfg.input_dim, cfg.n_embed)]
             for _ in range(1, mlp_depth):
-                modules.append(nn.GELU())
+                modules.append(nn.GELU())  # type: ignore
                 modules.append(nn.Linear(cfg.n_embed, cfg.n_embed))
             modules = nn.Sequential(*modules)
 
@@ -58,9 +58,9 @@ class MlpProjector(nn.Module):
             mlp_ratio = cfg.mlp_ratio
             modules = [nn.Linear(cfg.input_dim * cfg.downsample_ratio * cfg.downsample_ratio, cfg.n_embed * mlp_ratio)]
             for _ in range(1, mlp_depth - 1):
-                modules.append(nn.GELU())
+                modules.append(nn.GELU())  # type: ignore
                 modules.append(nn.Linear(cfg.n_embed * mlp_ratio, cfg.n_embed * mlp_ratio))
-            modules.append(nn.GELU())
+            modules.append(nn.GELU())  # type: ignore
             modules.append(nn.Linear(cfg.n_embed * mlp_ratio, cfg.n_embed))
             modules = nn.Sequential(*modules)
 
@@ -203,18 +203,21 @@ class DeepSeekVLV2CausalLMOutputWithPast(ModelOutput):
             Language modeling loss (for next-token prediction).
         logits (`torch.FloatTensor` of shape `(batch_size, sequence_length, config.vocab_size)`):
             Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
-        past_key_values (`tuple(tuple(torch.FloatTensor))`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
+        past_key_values (`tuple(tuple(torch.FloatTensor))`, *optional*, returned when `use_cache=True` is passed
+        or when `config.use_cache=True`):
             Tuple of `tuple(torch.FloatTensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
             `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
 
             Contains pre-computed hidden-states (key and values in the self-attention blocks) that can be used (see
             `past_key_values` input) to speed up sequential decoding.
-        hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+        hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed
+        or when `config.output_hidden_states=True`):
             Tuple of `torch.FloatTensor` (one for the output of the embeddings, if the model has an embedding layer, +
             one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
 
             Hidden-states of the model at the output of each layer plus the optional initial embedding outputs.
-        attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed or when `config.output_attentions=True`):
+        attentions (`tuple(torch.FloatTensor)`, *optional*, returned when `output_attentions=True` is passed
+        or when `config.output_attentions=True`):
             Tuple of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length,
             sequence_length)`.
 
@@ -225,7 +228,7 @@ class DeepSeekVLV2CausalLMOutputWithPast(ModelOutput):
     """
 
     loss: Optional[torch.FloatTensor] = None
-    logits: torch.FloatTensor = None
+    logits: torch.FloatTensor = None  # type: ignore
     past_key_values: Optional[List[torch.FloatTensor]] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
@@ -292,9 +295,9 @@ class DeepseekVLV2ForCausalLM(DeepseekVLV2PreTrainedModel):
             num_heads=vision_config.heads,
             mlp_ratio=vision_config.mlp_ratio,
             class_token=vision_config.class_token,
-            global_pool=vision_config.global_pool,
+            global_pool=vision_config.global_pool,  # type: ignore
             ignore_head=vision_config.ignore_head,
-            weight_init=vision_config.weight_init,
+            weight_init=vision_config.weight_init,  # type: ignore
             num_classes=0,
             deterministic=vision_config.deterministic,
             num_recomputing_layers=vision_config.num_recomputing_layers
@@ -353,18 +356,18 @@ class DeepseekVLV2ForCausalLM(DeepseekVLV2PreTrainedModel):
             input_embeds (torch.Tensor): [b, T, D]
         """
 
-        if images is None or images_spatial_crop.sum() == 0:
+        if images is None or images_spatial_crop.sum() == 0:  # type: ignore
             return self.language.get_input_embeddings()(input_ids)
 
-        bs, max_n_images, _ = images_spatial_crop.shape
+        bs, max_n_images, _ = images_spatial_crop.shape  # type: ignore
         batch_num_tiles = [0 for _ in range(bs)]
         total_tiles = []
         for idx in range(bs):
             for jdx in range(max_n_images):
-                num_width_tiles, num_height_tiles = images_spatial_crop[idx, jdx]
+                num_width_tiles, num_height_tiles = images_spatial_crop[idx, jdx]  # type: ignore
                 if num_width_tiles == 0 or num_height_tiles == 0:
                     break
-                batch_num_tiles[idx] += (1 + num_width_tiles * num_height_tiles)
+                batch_num_tiles[idx] += (1 + num_width_tiles * num_height_tiles)  # type: ignore
 
             total_tiles.append(images[idx, :batch_num_tiles[idx]])
 
@@ -387,12 +390,12 @@ class DeepseekVLV2ForCausalLM(DeepseekVLV2PreTrainedModel):
 
         # 根据self.tile_tag & self.global_view_pos填充image token sequence
         tile_index = 0
-        for idx in range(images_spatial_crop.shape[0]):
+        for idx in range(images_spatial_crop.shape[0]):  # type: ignore
             images_in_this_batch = []
-            for jdx in range(images_spatial_crop.shape[1]):
+            for jdx in range(images_spatial_crop.shape[1]):  # type: ignore
 
                 # extra global & local features
-                num_width_tiles, num_height_tiles = images_spatial_crop[idx, jdx]
+                num_width_tiles, num_height_tiles = images_spatial_crop[idx, jdx]  # type: ignore
                 if num_width_tiles == 0 or num_height_tiles == 0:
                     break
 
@@ -472,7 +475,7 @@ class DeepseekVLV2ForCausalLM(DeepseekVLV2PreTrainedModel):
 
             if len(images_in_this_batch) > 0:
                 images_in_this_batch = torch.cat(images_in_this_batch, dim=0)
-                input_embeds[idx].masked_scatter_(images_seq_mask[idx].unsqueeze(-1), images_in_this_batch)
+                input_embeds[idx].masked_scatter_(images_seq_mask[idx].unsqueeze(-1), images_in_this_batch)  # type: ignore
 
         return input_embeds
 
@@ -490,7 +493,7 @@ class DeepseekVLV2ForCausalLM(DeepseekVLV2PreTrainedModel):
     ):
         if inputs_embeds is None:
             inputs_embeds = self.prepare_inputs_embeds(
-                input_ids=input_ids,
+                input_ids=input_ids,  # type: ignore
                 images=images,
                 images_seq_mask=images_seq_mask,
                 images_spatial_crop=images_spatial_crop,
@@ -501,7 +504,7 @@ class DeepseekVLV2ForCausalLM(DeepseekVLV2PreTrainedModel):
             del images_spatial_crop
 
             if attention_mask is not None:
-                attention_mask = attention_mask.to(inputs_embeds.device)
+                attention_mask = attention_mask.to(inputs_embeds.device)  # type: ignore
 
             self._clear_cuda_cache()
 

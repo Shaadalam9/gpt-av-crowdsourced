@@ -3,7 +3,6 @@ from ollama import OllamaClient
 from chat_gpt import ImageAnalyser
 import common
 import os
-import subprocess
 
 
 def run_ollama():
@@ -56,7 +55,6 @@ def run_vqa():
             print(f"\n[{image_file}] DeepSeek Response: {answer}")
 
 
-
 def run_chatgpt():
     """
     Run GPT-4 Vision-based image analysis via the ImageAnalyser.
@@ -85,8 +83,8 @@ def run_chatgpt():
 
 
 if __name__ == "__main__":
-    # run_ollama()
-    # Stop the 'ollama' service
-    # subprocess.run(["systemctl", "stop", "ollama"], check=True)
+    run_ollama()
+
     run_vqa()
-    # run_chatgpt()
+
+    run_chatgpt()

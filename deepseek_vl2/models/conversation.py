@@ -4,7 +4,7 @@ From https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
 
 import dataclasses
 from enum import IntEnum, auto
-from typing import Any, Dict, List
+from typing import Any, Dict, List  # noqa:F401
 
 
 class SeparatorStyle(IntEnum):
@@ -27,19 +27,19 @@ class Conversation:
     # The system message
     system_message: str = ""
     # The names of two roles
-    roles: List[str] = (("USER", "ASSISTANT"),)
+    roles: List[str] = (("USER", "ASSISTANT"),)  # type: ignore
     # All messages. Each item is (role, message).
-    messages: List[List[str]] = ()
+    messages: List[List[str]] = ()  # type: ignore
     # The number of few shot examples
     offset: int = 0
     # The separator style and configurations
     sep_style: SeparatorStyle = SeparatorStyle.DeepSeek
     sep: str = "\n"
-    sep2: str = None
+    sep2: str = None  # type: ignore
     # Stop criteria (the default one is EOS token)
-    stop_str: str = None
+    stop_str: str = None  # type: ignore
     # Stops generation if meeting any token in this list
-    stop_token_ids: List[int] = None
+    stop_token_ids: List[int] = None  # type: ignore
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -65,7 +65,8 @@ class Conversation:
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     if role == "User":
-                        ret += "<｜sft▁begin｜>\n" + message + self.sep #<｜sft▁begin｜>User Input<｜sft▁end｜>\nResponse<｜end▁of▁sentence｜>
+                        # <｜sft▁begin｜>User Input<｜sft▁end｜>\nResponse<｜end▁of▁sentence｜>
+                        ret += "<｜sft▁begin｜>\n" + message + self.sep
                     else:
                         ret += message + self.sep2
                 else:
@@ -78,7 +79,7 @@ class Conversation:
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     if type(message) is tuple:
-                        message, _, _ = message
+                        message, _, _ = message  # type: ignore
                     if i % 2 == 0:
                         ret += message + seps[i % 2]
                     else:
@@ -92,7 +93,7 @@ class Conversation:
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     if type(message) is tuple:
-                        message, _, _ = message
+                        message, _, _ = message  # type: ignore
                     if i % 2 == 0:
                         ret += '<image>\n' + seps[i % 2]
                     else:
@@ -126,7 +127,7 @@ class Conversation:
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+        for i, (role, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
                 ret.append([msg, None])
             else:
@@ -138,7 +139,7 @@ class Conversation:
         system_prompt = self.system_template.format(system_message=self.system_message)
         ret = [{"role": "system", "content": system_prompt}]
 
-        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+        for i, (_, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
                 ret.append({"role": "user", "content": msg})
             else:
@@ -212,14 +213,14 @@ register_conv_template(
         # system_message="You are a helpful assistant. Please answer truthfully and write out your "
         # "thinking step by step to be sure you get the right answer.",
         system_message="",
-        roles=("<|User|>", "<|Assistant|>"),
-        messages=(),
+        roles=("<|User|>", "<|Assistant|>"),  # type: ignore
+        messages=(),  # type: ignore
         offset=0,
         sep_style=SeparatorStyle.DeepSeek,
         sep="\n\n",
         sep2="<｜end▁of▁sentence｜>",
         stop_token_ids=[100001],
-        stop_str=["User:", "<｜end▁of▁sentence｜>"]
+        stop_str=["User:", "<｜end▁of▁sentence｜>"]  # type: ignore
     )
 )
 # register_conv_template(
@@ -242,14 +243,14 @@ register_conv_template(
         name="deepseekv2",
         system_template="{system_message}",
         system_message="",
-        roles=("|<User>|", "|<Assistant>|"),
-        messages=(),
+        roles=("|<User>|", "|<Assistant>|"),  # type: ignore
+        messages=(),  # type: ignore
         offset=0,
         sep_style=SeparatorStyle.DeepSeekV2,
         sep="\n<｜sft▁end｜>",
         sep2="<｜end▁of▁sentence｜>",
         stop_token_ids=[100001],
-        stop_str=["User:", "<｜end▁of▁sentence｜>"]
+        stop_str=["User:", "<｜end▁of▁sentence｜>"]  # type: ignore
     )
 )
 
@@ -259,14 +260,14 @@ register_conv_template(
         name="plain",
         system_template="",
         system_message="",
-        roles=("", ""),
-        messages=(),
+        roles=("", ""),  # type: ignore
+        messages=(),  # type: ignore
         offset=0,
         sep_style=SeparatorStyle.PLAIN,
         sep="",
         sep2="",
         stop_token_ids=[100001],
-        stop_str=['</s>'],
+        stop_str=['</s>'],  # type: ignore
     )
 )
 
@@ -276,14 +277,14 @@ register_conv_template(
         name="alignment",
         system_template="",
         system_message="",
-        roles=("", ""),
-        messages=(),
+        roles=("", ""),  # type: ignore
+        messages=(),  # type: ignore
         offset=0,
         sep_style=SeparatorStyle.ALIGNMENT,
         sep="",
         sep2="",
         stop_token_ids=[100001],
-        stop_str=['</s>'],
+        stop_str=['</s>'],  # type: ignore
     )
 )
 
@@ -296,7 +297,7 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "Who are you?")
     conv.append_message(conv.roles[1], "I am a helpful assistant.")
     conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
+    conv.append_message(conv.roles[1], None)  # type: ignore
     print(conv.get_prompt())
 
     print("deepseekv2 template:")
@@ -306,5 +307,5 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "Who are you?")
     conv.append_message(conv.roles[1], "I am a helpful assistant.")
     conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
+    conv.append_message(conv.roles[1], None)  # type: ignore
     print(conv.get_prompt())

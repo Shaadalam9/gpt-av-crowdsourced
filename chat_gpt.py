@@ -2,8 +2,8 @@ import os
 import pandas as pd
 import base64
 import json
-from dotenv import load_dotenv
-from openai import OpenAI
+from dotenv import load_dotenv  # type: ignore
+from openai import OpenAI  # type: ignore
 import common
 from custom_logger import CustomLogger
 from logmod import logs
@@ -12,6 +12,7 @@ from langchain.schema import messages_from_dict, messages_to_dict
 
 logs(show_level=common.get_configs("logger_level"), show_color=True)
 logger = CustomLogger(__name__)  # use custom logger
+
 
 class ImageAnalyser:
     """
@@ -168,6 +169,7 @@ class ImageAnalyser:
         except Exception as e:
             logger.error(f"An error occurred during image analysis: {e}")
             return None
+
 
 # Example usage
 if __name__ == "__main__":

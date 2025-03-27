@@ -4,11 +4,14 @@ from transformers.utils import logging
 logger = logging.get_logger(__name__)
 
 DEEPSEEK_PRETRAINED_CONFIG_ARCHIVE_MAP = {}
+
+
 class DeepseekV2Config(PretrainedConfig):
     r"""
-    This is the configuration class to store the configuration of a [`DeepseekV2Model`]. It is used to instantiate an DeepSeek
-    model according to the specified arguments, defining the model architecture. Instantiating a configuration with the
-    defaults will yield a similar configuration to that of the DeepSeek-V2 with multi-latent attention.
+    This is the configuration class to store the configuration of a [`DeepseekV2Model`]. It is used to instantiate an
+    DeepSeek model according to the specified arguments, defining the model architecture. Instantiating a
+    configuration with the defaults will yield a similar configuration to that of the DeepSeek-V2
+    with multi-latent attention.
 
     Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PretrainedConfig`] for more information.
@@ -39,7 +42,8 @@ class DeepseekV2Config(PretrainedConfig):
         n_group (`int`, *optional*, defaults to None):
             Number of groups for routed experts.
         topk_group (`int`, *optional*, defaults to None):
-            Number of selected groups for each token(for each token, ensuring the selected experts is only within `topk_group` groups).
+            Number of selected groups for each token(for each token, ensuring the selected experts
+            is only within `topk_group` groups).
         num_experts_per_tok (`int`, *optional*, defaults to None):
             Number of selected experts, None means dense model.
         moe_layer_freq (`int`, *optional*, defaults to 1):
@@ -119,29 +123,29 @@ class DeepseekV2Config(PretrainedConfig):
         vocab_size=102400,
         hidden_size=4096,
         intermediate_size=11008,
-        moe_intermediate_size = 1407,
+        moe_intermediate_size=1407,
         num_hidden_layers=30,
         num_attention_heads=32,
         num_key_value_heads=32,
-        n_shared_experts = None,
-        n_routed_experts = None,
-        ep_size = 1,
-        routed_scaling_factor = 1.0,
-        kv_lora_rank = 512,
-        q_lora_rank = 1536,
-        qk_rope_head_dim = 64,
-        v_head_dim = 128,
-        qk_nope_head_dim = 128,
-        topk_method = 'gready',
-        n_group = None,
-        topk_group = None,
-        num_experts_per_tok = None,
-        moe_layer_freq = 1,
-        first_k_dense_replace = 0,
-        norm_topk_prob = False,
-        scoring_func = 'softmax',
-        aux_loss_alpha = 0.001,
-        seq_aux = True,
+        n_shared_experts=None,
+        n_routed_experts=None,
+        ep_size=1,
+        routed_scaling_factor=1.0,
+        kv_lora_rank=512,
+        q_lora_rank=1536,
+        qk_rope_head_dim=64,
+        v_head_dim=128,
+        qk_nope_head_dim=128,
+        topk_method='gready',
+        n_group=None,
+        topk_group=None,
+        num_experts_per_tok=None,
+        moe_layer_freq=1,
+        first_k_dense_replace=0,
+        norm_topk_prob=False,
+        scoring_func='softmax',
+        aux_loss_alpha=0.001,
+        seq_aux=True,
         hidden_act="silu",
         max_position_embeddings=2048,
         initializer_range=0.02,

@@ -8,7 +8,6 @@ import json
 import socket
 import base64
 import common
-from custom_logger import CustomLogger
 from logmod import logs
 import random
 from datetime import datetime
