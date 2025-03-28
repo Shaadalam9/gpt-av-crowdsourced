@@ -20,20 +20,7 @@ def get_shuffled_images(folder_path, seed):
     return random.sample(image_paths, len(image_paths))
 
 
-image_dir = common.get_configs("data")
-prompt = common.get_configs("prompt")
-use_history = common.get_configs("use_history")
-max_memory = common.get_configs("max_memory_messages")
-seed = common.get_configs("random_seed")
-
-
-def run_ollama():
-    """
-    Run the OllamaClient for image analysis using various models.
-
-    Loads configuration settings, iterates through each model, and generates outputs
-    for images in the specified folder. Optionally deletes conversation history files.
-    """
+def run_ollama(prompt, image_dir, seed, use_history, max_memory):
     print("\n--- Running OllamaClient ---\n")
     model_list = common.get_configs("model_names")
     image_paths = get_shuffled_images(image_dir, seed)
@@ -42,8 +29,8 @@ def run_ollama():
         print(f"\n--- Processing with model: {model} ---\n")
         client = OllamaClient(
             model_name=model,
-            use_history=common.get_configs("use_history"),
-            max_memory_messages=common.get_configs("max_memory_messages")
+            use_history=use_history,
+            max_memory_messages=max_memory
         )
         client.generate(
             prompt=prompt,
@@ -54,12 +41,7 @@ def run_ollama():
             OllamaClient.delete_old_file()
 
 
-def run_vqa():
-    """
-    Run Visual Question Answering using the DeepSeek-VL2 model.
-
-    Sends each image to the model with a question and stores the response.
-    """
+def run_vqa(prompt, image_dir, seed, use_history, max_memory):
     print("\n--- Running Visual Question Answering (DeepSeek) ---\n")
     vqa = VisualQuestionAnswering(use_history=use_history, max_memory_messages=max_memory)
     image_paths = get_shuffled_images(image_dir, seed)
@@ -70,12 +52,7 @@ def run_vqa():
         print(f"\n[{image_file}] DeepSeek Response: {answer}")
 
 
-def run_chatgpt():
-    """
-    Run GPT-4 Vision-based image analysis via the ImageAnalyser.
-
-    Sends each image in a folder to the OpenAI model and stores the result.
-    """
+def run_chatgpt(prompt, image_dir, seed, use_history, max_memory):
     print("\n--- Running GPT-4 Vision Analyser ---\n")
     image_paths = get_shuffled_images(image_dir, seed)
 
@@ -93,8 +70,14 @@ def run_chatgpt():
 
 
 if __name__ == "__main__":
-    run_ollama()
+    image_dir = common.get_configs("data")
+    prompt = common.get_configs("prompt")
+    use_history = common.get_configs("use_history")
+    max_memory = common.get_configs("max_memory_messages")
+    seed_list = common.get_configs("random_seed")
 
-    run_vqa()
-
-    run_chatgpt()
+    for seed in seed_list:
+        print(f"\n============================\nRunning for seed: {seed}\n============================")
+        run_ollama(prompt, image_dir, seed, use_history, max_memory)
+        run_vqa(prompt, image_dir, seed, use_history, max_memory)
+        run_chatgpt(prompt, image_dir, seed, use_history, max_memory)
