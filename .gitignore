@@ -13,6 +13,7 @@ analysis/
 __pycache__/
 *.pyc
 *.egg-info/
+.mypy_cache
 
 # Scripts
 run_download.py

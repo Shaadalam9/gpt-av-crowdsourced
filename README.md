@@ -63,22 +63,26 @@ python3 analysis.py
 
 
 ### Configuration of project
-Configuration of the project needs to be defined in `llms-av-crowdsourced/config`. Please use the `default.config` file for the required structure of the file. If no custom config file is provided, `default.config` is used. The config file has the following parameters:
+
+Configuration of the project needs to be defined in `llms-av-crowdsourced/config`. Please use the `default.config` file for the required structure. If no custom config file is provided, `default.config` is used. The config file has the following parameters:
+
 - **data** [String]: Specifies the directory where your image files are stored (e.g., `"data"`).
+- **output** [String]: Directory path where model outputs will be saved (e.g., `"_output"`).
 - **font_family** [String]: Lists the font families to be used in visualisation outputs (e.g., `"Open Sans, verdana, arial, sans-serif"`).
-- **font_size** [Integer]: Sets the base font size for graphs and other visual elements.
-- **random_seed** [Integer]: Defines a seed value for random number generation to ensure reproducible results.
+- **font_size** [Integer]: Sets the base font size for graphs and other visual elements (e.g., `12`).
+- **random_seed** [List of Integers]: A list of seed values for reproducible runs (e.g., `[42]`).
 - **use_history** [Boolean]: Determines whether conversation history is maintained and utilised during processing. When `true`, previous interactions are stored and influence current model responses.
-- **retain_history_files** [Boolean]: Controls whether history files (conversation logs and memory) are retained after processing. If set to `false`, these files are deleted after processing.
-- **max_memory_messages** [Integer]: Specifies the maximum number of previous conversation messages to retain in memory for context.
-- **temperature** [Float]: Adjusts the randomness of the model's response generation. Lower values produce more deterministic outputs, while higher values introduce variability.
-- **plotly_template** [String]: Determines the styling template used for graphs and visualisations (e.g., `"plotly_white"` or `"plotly_dark"`).
+- **true_history_files** [Boolean]: Controls whether history files (conversation logs and memory) are retained after processing. If set to `false`, these files are deleted after processing.
+- **max_memory_messages** [Integer]: Specifies the maximum number of previous conversation messages to retain in memory for context (e.g., `6`).
+- **temperature** [Float]: Adjusts the randomness of the model's response generation. Lower values produce more deterministic outputs, while higher values introduce variability (e.g., `0.8`).
+- **plotly_template** [String]: Determines the styling template used for graphs and visualisations (e.g., `"plotly_white"`).
 - **logger_level** [String]: Sets the logging level (e.g., `"info"` or `"debug"`) to control the verbosity of runtime messages.
 - **model_names** [List of Strings]: A list of model identifiers that the system will sequentially use to process images (e.g., `["gemma"]`).
-- **base_prompt** [String]: Provides the initial context for the model, setting the stage for how it should interpret its task.
+- **base_prompt** [String]: Provides the initial context for the model, setting the stage for how it should interpret its task (e.g., describing the user's perspective as a pedestrian).
 - **history_intro** [String]: Contains introductory text that precedes the conversation history, informing the model how previous responses may influence its current decision-making.
 - **current_image_instruction** [String]: Offers specific instructions for interpreting the current image, guiding the model on how to generate its response.
-- **prompt** [String]: The main directive provided to the model for evaluating the image. This prompt instructs the model to output a confidence score (ranging from 0 to 100) based solely on the image content.
+- **prompt** [String]: The main directive provided to the model for evaluating the image. This prompt instructs the model to first interpret the meaning of any digital display, then provide a confidence rating in this format:  
+  `"Meaning: [briefly explain]. Confidence: [numeric value]"`
 
 
 ## License
