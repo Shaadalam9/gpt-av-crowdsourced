@@ -4,6 +4,9 @@ from chat_gpt import GPT_ImageAnalyser
 import common
 import os
 import random
+import subprocess
+import signal
+import platform
 
 # Create the output folder if it doesn't exist already.
 output_folder = common.get_configs("output")
@@ -73,6 +76,65 @@ def run_ollama(prompt, image_dir, seed, use_history, max_memory):
         # Optionally delete old history files based on the configuration.
         if common.get_configs("delete_history_files"):
             OllamaClient.delete_old_file()
+
+
+def kill_ollama_linux():
+    """
+    Finds and kills all 'ollama' processes on Linux/macOS using pgrep and SIGKILL.
+    """
+    try:
+        # Get list of process IDs matching 'ollama'
+        result = subprocess.run(["pgrep", "ollama"], capture_output=True, text=True)
+        pids = result.stdout.strip().split()
+
+        if not pids or pids == ['']:
+            print("No 'ollama' process found on Linux/macOS.")
+            return
+
+        # Kill each process found
+        for pid in pids:
+            print(f"Killing ollama process with PID: {pid}")
+            os.kill(int(pid), signal.SIGKILL)
+
+        print("All 'ollama' processes terminated on Linux/macOS.")
+
+    except Exception as e:
+        print(f"Error on Linux/macOS: {e}")
+
+
+def kill_ollama_windows():
+    """
+    Finds and kills all 'ollama.exe' processes on Windows using taskkill.
+    """
+    try:
+        # Use taskkill to forcibly terminate all ollama.exe processes
+        result = subprocess.run(["taskkill", "/IM", "ollama.exe", "/F"], capture_output=True, text=True)
+
+        # Check if the command was successful
+        if "SUCCESS" in result.stdout.upper():
+            print("All 'ollama.exe' processes terminated on Windows.")
+        elif "not found" in result.stdout.lower():
+            print("No 'ollama.exe' process found on Windows.")
+        else:
+            print(result.stdout.strip())
+
+    except Exception as e:
+        print(f"Error on Windows: {e}")
+
+
+def kill_ollama():
+    """
+    Main function that checks the operating system and calls the appropriate method
+    to kill 'ollama' processes.
+    """
+    current_os = platform.system()
+
+    if current_os == "Linux" or current_os == "Darwin":
+        kill_ollama_linux()
+    elif current_os == "Windows":
+        kill_ollama_windows()
+    else:
+        print(f"Unsupported OS: {current_os}")
 
 
 def run_vqa(prompt, image_dir, seed, use_history, max_memory):
@@ -145,5 +207,6 @@ if __name__ == "__main__":
     for seed in seed_list:
         print(f"\n============================\nRunning for seed: {seed}\n============================")
         run_ollama(prompt, image_dir, seed, use_history, max_memory)
+        kill_ollama()
         run_vqa(prompt, image_dir, seed, use_history, max_memory)
         run_chatgpt(prompt, image_dir, seed, use_history, max_memory)
