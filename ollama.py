@@ -1,5 +1,7 @@
 # Standard libraries
 import os
+import re
+import math
 import pandas as pd
 import subprocess
 import requests
@@ -231,7 +233,7 @@ class OllamaClient:
     def generate(self, prompt, image_paths, output_csv=None, use_history=None, seed=42):
         """
         Process the given image_paths using the provided prompt, generate responses, and update the output CSV file.
-        
+
         If an output file named output_{seed}.csv already exists, it is loaded and a new column
         (named after the model) is added/updated without deleting existing data.
 
@@ -356,6 +358,76 @@ class OllamaClient:
         os.makedirs(os.path.dirname(output_csv), exist_ok=True)
         df.to_csv(output_csv, index=False)
         print(f"\nSaved results to {output_csv}")
+
+    def generate_simple_text(self, sentence, model="deepseek-r1:1.5b", prompt="Tell me a story.",):
+        """
+        Generate text using a simple prompt and stream the response from the model.
+
+        Args:
+            prompt (str): The text prompt to send to the model.
+            model (str): The model to use for generation (e.g., 'deepseek-r1:1.5b').
+
+        Returns:
+            tuple: (full generated text, extracted number or NaN)
+        """
+        # Switch to the new model for this request
+        self.model_name = model
+
+        # Ensure server and model are ready
+        self.ensure_server_running()
+        self.ensure_model_available()
+
+        # Prompt
+        prompt = f"""
+            Read the following sentence carefully and extract the number mentioned in it. 
+            Only return the number (as digits), without any additional explanation or units.
+
+            Sentence: "{sentence}"
+            """
+
+        url = f"http://{self.host}:{self.port}/api/generate"
+        data = {
+            "model": self.model_name,
+            "prompt": prompt,
+            "stream": True
+        }
+
+        full_response = ""
+
+        try:
+            response = requests.post(url, json=data, stream=True)
+            if response.status_code == 200:
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode("utf-8")
+                        result = json.loads(decoded_line)
+                        generated_text = result.get("response", "")
+                        full_response += generated_text
+            else:
+                full_response = f"Request failed with status code {response.status_code}"
+        except requests.exceptions.RequestException as e:
+            full_response = f"Request failed: {e}"
+
+        # Extract number from the generated text
+        number = self.extract_number(full_response)
+
+        if number is None:
+            number = math.nan
+
+        return number
+
+    @staticmethod
+    def extract_number(text):
+        """
+        Extracts and returns the first number found in the provided text.
+        Returns an int if the number is an integer, or a float if it contains a decimal.
+        """
+        pattern = r"[-+]?\d*\.\d+|[-+]?\d+"
+        match = re.search(pattern, text)
+        if match:
+            num_str = match.group(0)
+            return float(num_str) if '.' in num_str else int(num_str)
+        return None
 
 
 if __name__ == "__main__":
