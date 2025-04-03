@@ -1,6 +1,6 @@
-from deepseek import VisualQuestionAnswering
 from ollama import OllamaClient
 from chat_gpt import GPT_ImageAnalyser
+from deepseek import VisualQuestionAnswering
 import common
 import os
 import random
@@ -9,8 +9,15 @@ import signal
 import platform
 
 # Create the output folder if it doesn't exist already.
-output_folder = common.get_configs("output")
-os.makedirs(output_folder, exist_ok=True)
+if common.get_configs("use_history"):
+    folder_name = "with_memory"
+else:
+    folder_name = "without_memory"
+
+# Define the output directory and create the specific subdirectory
+dir_path = os.path.join(common.get_configs("output"), folder_name)
+os.makedirs(dir_path, exist_ok=True)
+print(f"Created folder: {dir_path}")
 
 
 def get_shuffled_images(folder_path, seed):

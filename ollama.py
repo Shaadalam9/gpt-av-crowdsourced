@@ -379,7 +379,7 @@ class OllamaClient:
 
         # Prompt
         prompt = f"""
-            Read the following sentence carefully and extract the number mentioned in it. 
+            Read the following sentence carefully and extract the number mentioned in it.
             Only return the number (as digits), without any additional explanation or units.
 
             Sentence: "{sentence}"
