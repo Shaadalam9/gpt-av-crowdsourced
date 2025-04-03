@@ -11,6 +11,10 @@ from custom_logger import CustomLogger
 from logmod import logs
 from ollama import OllamaClient
 
+# Paths
+output_path = common.get_configs("output")
+data_path = common.get_configs("data")
+
 
 class Analysis:
     """
@@ -159,7 +163,7 @@ class Analysis:
         merged_df = pd.merge(merged_df, ehmi_df, left_on="text", right_on="eHMI", how="inner")
         return merged_df
 
-    def plot_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df):
+    def plot_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type):
         """
         Plots the eHMI mean (from eHMIs.csv) versus various LLM score columns (from avg_df)
         for each text category (derived from mapping.csv).
@@ -184,9 +188,9 @@ class Analysis:
             yaxis_title="LLM Score",
             legend_title="LLM Score Column"
         )
-        fig.show()
+        self.save_plotly_figure(fig, f"merged_{memory_type}", save_final=False)
 
-    def plot_individual_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df):
+    def plot_individual_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type):
         """
         Creates individual scatter plots of the eHMI mean versus each LLM score column.
         Returns a dictionary with column names as keys and corresponding Plotly figures as values.
@@ -203,7 +207,6 @@ class Analysis:
         merged_df = pd.merge(avg_df, mapping_df, left_on="image", right_on="id", how="inner")
         merged_df = pd.merge(merged_df, ehmi_df, left_on="text", right_on="eHMI", how="inner")
         numeric_columns = [col for col in avg_df.columns if col != "image"]
-        figures = {}
 
         for col in numeric_columns:
             fig = go.Figure()
@@ -219,21 +222,38 @@ class Analysis:
                 xaxis_title="eHMI Mean",
                 yaxis_title=col
             )
-            figures[col] = fig
 
-        return figures
+            self.save_plotly_figure(fig, f"scatter_plot_{col}_{memory_type}", save_final=False)
 
 
 # Example usage
 if __name__ == "__main__":
     analysis = Analysis()
-    avg_df = analysis.average_llm_results(folder_path="_output/with_memory/analysed", image_column="image")
-    analysis.plot_ehmi_vs_llm(mapping_csv_path="data/mapping.csv",
-                              ehmi_csv_path="data/ehmis.csv",
-                              avg_df=avg_df)
+    # Loop over both configurations
+    for memory_type in ["with_memory", "without_memory"]:
+        folder_path = os.path.join(output_path, memory_type, "analysed")
 
-    figures = analysis.plot_individual_ehmi_vs_llm(mapping_csv_path="data/mapping.csv",
-                                                   ehmi_csv_path="data/ehmis.csv",
-                                                   avg_df=avg_df)
-    for col, fig in figures.items():
-        fig.show()
+        # Skip if folder doesn't exist or is empty
+        if not os.path.isdir(folder_path) or not os.listdir(folder_path):
+            analysis.logger.error(f"Skipping {memory_type}: folder is missing or empty.")
+            continue
+
+        analysis.logger.info(f"Processing: {memory_type}")
+
+        avg_df = analysis.average_llm_results(
+            folder_path=os.path.join(output_path, memory_type, "analysed")
+        )
+
+        analysis.plot_ehmi_vs_llm(
+            mapping_csv_path=os.path.join(data_path, "mapping.csv"),
+            ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
+            avg_df=avg_df,
+            memory_type=memory_type
+        )
+
+        figures = analysis.plot_individual_ehmi_vs_llm(
+            mapping_csv_path=os.path.join(data_path, "mapping.csv"),
+            ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
+            avg_df=avg_df,
+            memory_type=memory_type
+        )
