@@ -359,7 +359,7 @@ class OllamaClient:
         df.to_csv(output_csv, index=False)
         print(f"\nSaved results to {output_csv}")
 
-    def generate_simple_text(self, sentence, model="deepseek-r1:1.5b", prompt="Tell me a story.",):
+    def generate_simple_text(self, sentence, model="deepseek-r1:14b", prompt="Tell me a story.",):
         """
         Generate text using a simple prompt and stream the response from the model.
 

@@ -98,14 +98,18 @@ class Analysis:
             for file_path in csv_files:
                 try:
                     df = pd.read_csv(file_path)
+                    self.logger.info(f"Processing {file_path} now....")
                     columns_to_analyze = [col for col in df.columns if col != "image"]
 
                     for index, row in df.iterrows():
                         for col in columns_to_analyze:
                             text = row[col]
-                            rating = math.nan if text == "" else self.client.generate_simple_text(
-                                sentence=text, model="deepseek-r1:1.5b"
-                            )
+                            if pd.isna(text) or text=="":
+                                rating = math.nan
+                            else: 
+                                rating=self.client.generate_simple_text(
+                                    sentence=text, model="deepseek-r1:14b"
+                                )
                             df.at[index, col] = rating
 
                     output_file_path = os.path.join(analysed_folder, os.path.basename(file_path))
@@ -114,7 +118,7 @@ class Analysis:
                 except Exception as e:
                     self.logger.error(f"Error processing {file_path}: {e}")
 
-    def average_llm_results(self, folder_path, image_column="image", output_csv_path=None):
+    def average_llm_results(self, folder_path, image_column="image", output_csv_path="data"):
         """
         Aggregate CSV files from a folder, compute the average for each numeric column grouped 
         by the image column, and optionally save the result to a CSV file.
@@ -231,6 +235,7 @@ if __name__ == "__main__":
     analysis = Analysis()
     # Loop over both configurations
     for memory_type in ["with_memory", "without_memory"]:
+        analysis.process_csv_files()
         folder_path = os.path.join(output_path, memory_type, "analysed")
 
         # Skip if folder doesn't exist or is empty
