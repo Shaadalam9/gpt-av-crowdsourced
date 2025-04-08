@@ -2,7 +2,7 @@
 
 
 ## Overview
-[![LLM Personas](figures/LLMs_personas.png)]
+![LLM Personas](figures/LLMs_personas.png)
 *A Ghibli-style persona illustration of the Large Language Models. 😁*
 
 ## Usage of the code
