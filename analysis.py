@@ -3,7 +3,8 @@ import glob
 import math
 import shutil
 import pandas as pd
-import plotly as py
+import plotly.express as px
+import plotly.offline as py
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots  # noqa: F401
 import common
@@ -21,6 +22,29 @@ class Analysis:
     A class for processing CSV files, averaging LLM results, 
     and plotting comparisons between eHMI means and LLM scores.
     """
+
+    # Centralized column rename mapping
+    RENAME_MAP = {
+        'minicpm-v': 'MiniCPM-V',
+        'llava:13b': 'LLaVA 13B',
+        'llava:34b': 'LLaVA 34B',
+        'llava-llama3': 'LLaVA-LLaMA3',
+        'llama3.2-vision': 'LLaMA3.2 Vision',
+        'moondream': 'MoonDream',
+        'bakllava': 'BakLLaVA',
+        'granite3.2-vision': 'Granite3.2 Vision',
+        'llava-phi3': 'LLaVA-Phi3',
+        'gemma3:12b': 'Gemma3 12B',
+        'gemma3:27b': 'Gemma3 27B',
+        'deepseek-vl2': 'DeepSeek VL2',
+        'cross': 'Cross',
+        'wait': 'Wait',
+        'egocentric': 'Egocentric',
+        'allocentric': 'Allocentric',
+        'med': 'Med',
+        'ehmi_mean': 'EHMI Mean',
+        'lang_encoded': 'Language (es=1)'
+    }
 
     def __init__(self):
         # Set up logging and plotly template
@@ -71,9 +95,7 @@ class Analysis:
                 self.logger.info(f"Saving eps file for {filename}.")
                 fig.write_image(os.path.join(output_folder, filename + ".eps"),
                                 width=width, height=height)
-                if save_final:
-                    shutil.copy(os.path.join(output_folder, filename + ".eps"),
-                                os.path.join(output_final, filename + ".eps"))
+
         except ValueError:
             self.logger.error(f"Value error raised when attempting to save image {filename}.")
 
@@ -104,10 +126,10 @@ class Analysis:
                     for index, row in df.iterrows():
                         for col in columns_to_analyze:
                             text = row[col]
-                            if pd.isna(text) or text=="":
+                            if pd.isna(text) or text == "":
                                 rating = math.nan
-                            else: 
-                                rating=self.client.generate_simple_text(
+                            else:
+                                rating = self.client.generate_simple_text(
                                     sentence=text, model="deepseek-r1:14b"
                                 )
                             df.at[index, col] = rating
@@ -120,7 +142,7 @@ class Analysis:
 
     def average_llm_results(self, folder_path, image_column="image", output_csv_path="data"):
         """
-        Aggregate CSV files from a folder, compute the average for each numeric column grouped 
+        Aggregate CSV files from a folder, compute the average for each numeric column grouped
         by the image column, and optionally save the result to a CSV file.
         """
         csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
@@ -158,7 +180,9 @@ class Analysis:
         ehmi_df = pd.read_csv(ehmi_csv_path).rename(columns={"mean": "ehmi_mean"})
 
         mapping_df["id"] = mapping_df["id"].astype(str)
-        avg_df["image"] = avg_df["image"].astype(str).str.replace("image_", "", regex=False)
+        avg_df["image"] = avg_df["image"].astype(str)\
+            .str.replace("image_", "", regex=False)\
+            .str.replace(".jpg", "", regex=False)
 
         mapping_df["text"] = mapping_df["text"].str.upper()
         ehmi_df["eHMI"] = ehmi_df["eHMI"].str.upper()
@@ -167,7 +191,7 @@ class Analysis:
         merged_df = pd.merge(merged_df, ehmi_df, left_on="text", right_on="eHMI", how="inner")
         return merged_df
 
-    def plot_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type):
+    def plot_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type, save_final=False):
         """
         Plots the eHMI mean (from eHMIs.csv) versus various LLM score columns (from avg_df)
         for each text category (derived from mapping.csv).
@@ -192,9 +216,9 @@ class Analysis:
             yaxis_title="LLM Score",
             legend_title="LLM Score Column"
         )
-        self.save_plotly_figure(fig, f"merged_{memory_type}", save_final=False)
+        self.save_plotly_figure(fig, f"merged_{memory_type}", save_final=save_final)
 
-    def plot_individual_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type):
+    def plot_individual_ehmi_vs_llm(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type, save_final=False):
         """
         Creates individual scatter plots of the eHMI mean versus each LLM score column.
         Returns a dictionary with column names as keys and corresponding Plotly figures as values.
@@ -218,16 +242,95 @@ class Analysis:
                 x=merged_df["ehmi_mean"],
                 y=merged_df[col],
                 mode='markers',
-                name=col,
+                name=self.RENAME_MAP.get(col, col),
                 text=merged_df["text"]
             ))
             fig.update_layout(
-                title=f"eHMI Mean vs {col}",
-                xaxis_title="eHMI Mean",
-                yaxis_title=col
+                title=f"",  # noqa: F541
+                xaxis_title="Mean response from the participants",
+                yaxis_title=self.RENAME_MAP.get(col, col)
             )
 
-            self.save_plotly_figure(fig, f"scatter_plot_{col}_{memory_type}", save_final=False)
+            self.save_plotly_figure(fig, f"scatter_plot_{col}_{memory_type}", save_final=save_final)
+
+    def plot_spearman_correlation(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type, save_final=False):
+        """
+            Generates and saves a Spearman correlation heatmap between selected features
+            from the merged DataFrame, including language as a numeric feature. Drops
+            NaN-only columns and renames columns for display, and rounds correlation values
+            to 3 decimal places.
+
+            Parameters:
+                mapping_csv_path (str): Path to the mapping CSV file.
+                ehmi_csv_path (str): Path to the EHMI CSV file.
+                avg_df (pd.DataFrame): DataFrame containing average values.
+                memory_type (str): Label for naming the output file based on memory type.
+                save_final (bool): Whether to finalize and persist the saved figure (default: False).
+
+            The function:
+                - Merges input data using a helper method.
+                - Selects a subset of relevant columns.
+                - Encodes the 'lang' column ('en' → 0, 'es' → 1).
+                - Drops columns with only NaN values and prints them.
+                - Computes Spearman correlation.
+                - Renames columns for readability in the heatmap.
+                - Saves a heatmap visualization using Plotly.
+        """
+        # Prepare merged DataFrame
+        df = self._prepare_merged_df(mapping_csv_path, ehmi_csv_path, avg_df)
+
+        # Encode 'lang' column: 'en' → 0, 'es' → 1
+        df['lang_encoded'] = df['lang'].map({'en': 0, 'es': 1})
+
+        # Columns to analyze
+        selected_columns = [
+            'minicpm-v', 'llava:13b', 'llava:34b', 'llava-llama3',
+            'llama3.2-vision', 'moondream', 'bakllava', 'granite3.2-vision',
+            'llava-phi3', 'gemma3:12b', 'gemma3:27b', 'deepseek-vl2',
+            'cross', 'wait', 'egocentric', 'allocentric', 'med', 'ehmi_mean',
+            'lang_encoded'  # Include encoded language
+        ]
+
+        df_selected = df[selected_columns]
+
+        # Drop columns with only NaN values
+        dropped_cols = df_selected.columns[df_selected.isna().all()].tolist()
+        if dropped_cols:
+            print("Dropped columns with all NaN values:", dropped_cols)
+            df_selected = df_selected.drop(columns=dropped_cols)
+
+        # Compute Spearman correlation matrix
+        corr_matrix = df_selected.corr(method='spearman')
+
+        # Rename columns for better display
+        rename_map = self.RENAME_MAP
+
+        # Apply renaming only to columns present
+        existing_rename_map = {k: v for k, v in rename_map.items() if k in corr_matrix.columns}
+        corr_matrix = corr_matrix.rename(index=existing_rename_map, columns=existing_rename_map)
+
+        # Generate heatmap
+        fig = px.imshow(
+            corr_matrix,
+            text_auto=".3f",  # type: ignore
+            color_continuous_scale='RdBu_r',
+            zmin=-1, zmax=1,
+            title=''
+        )
+        fig.update_layout(
+            xaxis_title="",
+            yaxis_title="",
+            width=1600,
+            height=1600,
+            coloraxis_showscale=False,
+            font=dict(size=16),
+            xaxis=dict(tickfont=dict(size=20)),  # for x-axis labels
+            yaxis=dict(tickfont=dict(size=20))   # for y-axis labels
+        )
+
+        # Save figure using class method
+        self.save_plotly_figure(fig, f"spearman_correlation_matrix_{memory_type}",
+                                width=1600, height=1600, save_final=save_final)
 
 
 # Example usage
@@ -235,7 +338,7 @@ if __name__ == "__main__":
     analysis = Analysis()
     # Loop over both configurations
     for memory_type in ["with_memory", "without_memory"]:
-        analysis.process_csv_files()
+        # analysis.process_csv_files()
         folder_path = os.path.join(output_path, memory_type, "analysed")
 
         # Skip if folder doesn't exist or is empty
@@ -246,19 +349,27 @@ if __name__ == "__main__":
         analysis.logger.info(f"Processing: {memory_type}")
 
         avg_df = analysis.average_llm_results(
-            folder_path=os.path.join(output_path, memory_type, "analysed")
+            folder_path=os.path.join(output_path, memory_type, "analysed"),
+            output_csv_path=os.path.join(output_path, f"avg_{memory_type}.csv")
         )
 
         analysis.plot_ehmi_vs_llm(
             mapping_csv_path=os.path.join(data_path, "mapping.csv"),
             ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
             avg_df=avg_df,
-            memory_type=memory_type
+            memory_type=memory_type, save_final=True
         )
 
         figures = analysis.plot_individual_ehmi_vs_llm(
             mapping_csv_path=os.path.join(data_path, "mapping.csv"),
             ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
             avg_df=avg_df,
-            memory_type=memory_type
+            memory_type=memory_type, save_final=True
         )
+
+    analysis.plot_spearman_correlation(
+        mapping_csv_path=os.path.join(data_path, "mapping.csv"),
+        ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
+        avg_df=avg_df, memory_type=memory_type,
+        save_final=True
+    )

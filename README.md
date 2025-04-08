@@ -2,11 +2,16 @@
 
 
 ## Overview
-[LLM models used in the project](figures/LLMs_persons.png)
-A ghibli style personas of the Large Language Models. 😁
+[LLM Personas](figures/LLMs_persons.png)
+*A Ghibli-style persona illustration of the Large Language Models. 😁*
 
 ## Usage of the code
-The code is open-source and free to use. It is aimed for, but not limited to, academic research. We welcome forking of this repository, pull requests, and any contributions in the spirit of open science and open-source code 😍😄 For inquiries about collaboration, you may contact Md Shadab Alam (md_shadab_alam@outlook.com) or Pavlo Bazilinskyy (pavlo.bazilinskyy@gmail.com).
+The code is open-source and free to use. It is aimed for, but not limited to, academic research. We welcome forking of this repository, pull requests, and any contributions in the spirit of open science and open-source code 😍😄 .
+For collaboration or inquiries, contact:
+
+- Md Shadab Alam: [md_shadab_alam@outlook.com](mailto:md_shadab_alam@outlook.com)  
+- Pavlo Bazilinskyy: [pavlo.bazilinskyy@gmail.com](mailto:pavlo.bazilinskyy@gmail.com)
+
 
 # Getting Started
 Tested with Python 3.9.21. To setup the environment run these two commands in a parent folder of the downloaded repository (replace `/` with `\` and possibly add `--user` if on Windows:
@@ -86,6 +91,78 @@ Configuration of the project needs to be defined in `llms-av-crowdsourced/config
 - **prompt** [String]: The main directive provided to the model for evaluating the image. This prompt instructs the model to first interpret the meaning of any digital display, then provide a confidence rating in this format:  
   `"Meaning: [briefly explain]. Confidence: [numeric value]"`
 
+
+## Results
+
+### Without utilising the past history
+
+[![Response from BakLLaVA vs crowdsourcing results](figures/scatter_plot_bakllava_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_bakllava_without_memory.html)  
+**How BakLLaVA interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from Gemma3 12B vs crowdsourcing results](figures/scatter_plot_gemma3:12b_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_gemma3:12b_without_memory.html)  
+**How Gemma3 12B interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from Gemma3 27B vs crowdsourcing results](figures/scatter_plot_gemma3:27b_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_gemma3:27b_without_memory.html)  
+**How Gemma3 27B interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from Granite3.2 Vision vs crowdsourcing results](figures/scatter_plot_granite3.2-vision_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_granite3.2-vision_without_memory.html)  
+**How Granite3.2 Vision interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from LLaMA3.2 Vision vs crowdsourcing results](figures/scatter_plot_llama3.2-vision_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_llama3.2-vision_without_memory.html)  
+**How LLaMA3.2 Vision interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from LLaVA-LLaMA3 vs crowdsourcing results](figures/scatter_plot_llava-llama3_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_llava-llama3_without_memory.html)  
+**How LLaVA-LLaMA3 interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from LLaVA-Phi3 vs crowdsourcing results](figures/scatter_plot_llava-phi3_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_llava-phi3_without_memory.html)  
+**How LLaVA-Phi3 interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from LLaVA 13B vs crowdsourcing results](figures/scatter_plot_llava:13b_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_llava:13b_without_memory.html)  
+**How LLaVA 13B interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from LLaVA 34B vs crowdsourcing results](figures/scatter_plot_llava:34b_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_llava:34b_without_memory.html)  
+**How LLaVA 34B interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from MiniCPM-V vs crowdsourcing results](figures/scatter_plot_minicpm-v_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_minicpm-v_without_memory.html)  
+**How MiniCPM-V interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from MoonDream vs crowdsourcing results](figures/scatter_plot_moondream_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_moondream_without_memory.html)  
+**How MoonDream interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from DeepSeek VL2 vs crowdsourcing results](figures/scatter_plot_deepseek-vl2_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/scatter_plot_deepseek-vl2_without_memory.html)  
+**How DeepSeek VL2 interprets AV scenes vs how people responded – without memory context**
+
+---
+
+[![Response from all LLMs vs crowdsourcing results](figures/merged_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/merged_without_memory.html)  
+**How all LLMs compare collectively to human responses – without memory context**
+
+---
+
+[![Correlation Matrix](figures/spearman_correlation_matrix_without_memory.png)](https://htmlpreview.github.io/?https://github.com/Shaadalam9/llms-av-crowdsourced/blob/main/figures/spearman_correlation_matrix_without_memory.html)  
+**Correlation matrix of all models' responses compared to human data – without memory context**
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
