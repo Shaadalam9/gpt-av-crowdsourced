@@ -37,12 +37,13 @@ class Analysis:
         'gemma3:12b': 'Gemma3 12B',
         'gemma3:27b': 'Gemma3 27B',
         'deepseek-vl2': 'DeepSeek VL2',
+        'gpt-4o': 'GPT-4o',
         'cross': 'Cross',
         'wait': 'Wait',
         'egocentric': 'Egocentric',
         'allocentric': 'Allocentric',
-        'med': 'Med',
-        'ehmi_mean': 'EHMI Mean',
+        'med': 'eHMI Med',
+        'ehmi_mean': 'eHMI Mean',
         'lang_encoded': 'Language (es=1)'
     }
 
@@ -151,6 +152,10 @@ class Analysis:
         for file in csv_files:
             try:
                 df = pd.read_csv(file)
+                # Replace values > 100 with NaN in numeric columns
+                df[df.select_dtypes(include='number').columns] = df.select_dtypes(
+                    include='number').where(lambda x: x <= 100)
+
                 dataframes.append(df)
             except Exception as e:
                 self.logger.error(f"Error reading {file}: {e}")
@@ -286,7 +291,7 @@ class Analysis:
         selected_columns = [
             'minicpm-v', 'llava:13b', 'llava:34b', 'llava-llama3',
             'llama3.2-vision', 'moondream', 'bakllava', 'granite3.2-vision',
-            'llava-phi3', 'gemma3:12b', 'gemma3:27b', 'deepseek-vl2',
+            'llava-phi3', 'gemma3:12b', 'gemma3:27b', 'deepseek-vl2', 'gpt-4o',
             'cross', 'wait', 'egocentric', 'allocentric', 'med', 'ehmi_mean',
             'lang_encoded'  # Include encoded language
         ]
@@ -298,6 +303,12 @@ class Analysis:
         if dropped_cols:
             print("Dropped columns with all NaN values:", dropped_cols)
             df_selected = df_selected.drop(columns=dropped_cols)
+
+        # Drop columns with constant values (same number across all rows)
+        constant_cols = [col for col in df_selected.columns if df_selected[col].nunique(dropna=False) <= 1]
+        if constant_cols:
+            print("Dropped constant-value columns:", constant_cols)
+            df_selected = df_selected.drop(columns=constant_cols)
 
         # Compute Spearman correlation matrix
         corr_matrix = df_selected.corr(method='spearman')
@@ -312,7 +323,7 @@ class Analysis:
         # Generate heatmap
         fig = px.imshow(
             corr_matrix,
-            text_auto=".3f",  # type: ignore
+            text_auto=".2f",  # type: ignore
             color_continuous_scale='RdBu_r',
             zmin=-1, zmax=1,
             title=''
@@ -339,7 +350,7 @@ if __name__ == "__main__":
     # Loop over both configurations
     for memory_type in ["with_memory", "without_memory"]:
         # analysis.process_csv_files()
-        folder_path = os.path.join(output_path, memory_type, "analysed")
+        folder_path = os.path.join(output_path, memory_type, "processed_csvs")
 
         # Skip if folder doesn't exist or is empty
         if not os.path.isdir(folder_path) or not os.listdir(folder_path):
@@ -349,9 +360,10 @@ if __name__ == "__main__":
         analysis.logger.info(f"Processing: {memory_type}")
 
         avg_df = analysis.average_llm_results(
-            folder_path=os.path.join(output_path, memory_type, "analysed"),
+            folder_path=os.path.join(output_path, memory_type, "processed_csvs"),
             output_csv_path=os.path.join(output_path, f"avg_{memory_type}.csv")
         )
+        print(avg_df)
 
         analysis.plot_ehmi_vs_llm(
             mapping_csv_path=os.path.join(data_path, "mapping.csv"),
@@ -367,9 +379,9 @@ if __name__ == "__main__":
             memory_type=memory_type, save_final=True
         )
 
-    analysis.plot_spearman_correlation(
-        mapping_csv_path=os.path.join(data_path, "mapping.csv"),
-        ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
-        avg_df=avg_df, memory_type=memory_type,
-        save_final=True
-    )
+        analysis.plot_spearman_correlation(
+            mapping_csv_path=os.path.join(data_path, "mapping.csv"),
+            ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
+            avg_df=avg_df, memory_type=memory_type,
+            save_final=True
+        )

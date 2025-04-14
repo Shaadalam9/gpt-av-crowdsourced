@@ -213,7 +213,7 @@ if __name__ == "__main__":
     # Loop over each seed in the configuration to run the processes.
     for seed in seed_list:
         print(f"\n============================\nRunning for seed: {seed}\n============================")
-        run_ollama(prompt, image_dir, seed, use_history, max_memory)
-        kill_ollama()
-        run_vqa(prompt, image_dir, seed, use_history, max_memory)
+        # run_ollama(prompt, image_dir, seed, use_history, max_memory)
+        # kill_ollama()
+        # run_vqa(prompt, image_dir, seed, use_history, max_memory)
         run_chatgpt(prompt, image_dir, seed, use_history, max_memory)

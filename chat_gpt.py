@@ -34,9 +34,9 @@ class GPT_ImageAnalyser:
         # The output CSV filename is set based on a random seed configuration.
         self.output_csv = os.path.join(common.get_configs("output"),
                                        f"output_{common.get_configs('random_seed')}.csv")
-        self.model_name = "gpt-4-vision-preview"
+        self.model_name = "gpt-4o"
         # Initialize the OpenAI client for API calls.
-        self.client = OpenAI()
+        self.client = OpenAI(api_key=common.get_secrets("OPENAI_API_KEY"))  # type: ignore
         # File path to save conversation memory.
         self.memory_file = os.path.join(common.get_configs("output"), "chatgpt_memory.json")
         # Initialize conversation memory using LangChain.
@@ -135,7 +135,7 @@ class GPT_ImageAnalyser:
         # Update conversation history if enabled.
         if self.use_history:
             self.memory.chat_memory.add_user_message(self.prompt)
-            self.memory.chat_memory.add_ai_message(content)
+            self.memory.chat_memory.add_ai_message(content)  # type: ignore
             # Keep only the most recent messages.
             self.memory.chat_memory.messages = self.memory.chat_memory.messages[-self.max_memory_messages:]
             self.save_memory()

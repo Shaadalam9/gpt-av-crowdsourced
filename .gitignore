@@ -2,6 +2,7 @@
 runs/
 _output/
 output.csv
+final/
 
 # Data folders
 data/
