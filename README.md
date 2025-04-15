@@ -3,7 +3,7 @@
 
 ## Overview
 ![LLM Personas](figures/LLMs_personas.png)
-*A Ghibli-style persona illustration of the Large Language Models. *😁
+A Ghibli-style persona illustration of the Large Language Models.😁
 
 ## Usage of the code
 The code is open-source and free to use. It is aimed for, but not limited to, academic research. We welcome forking of this repository, pull requests, and any contributions in the spirit of open science and open-source code 😍😄 .
