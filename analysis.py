@@ -45,7 +45,7 @@ class Analysis:
         'wait': 'Wait',
         'egocentric': 'Egocentric',
         'allocentric': 'Allocentric',
-        'med': 'eHMI Med',
+        'med': 'eHMI Median',
         'ehmi_mean': 'eHMI Mean',
         'lang_encoded': 'Language (es=1)'
     }
@@ -157,7 +157,7 @@ class Analysis:
                 df = pd.read_csv(file)
                 # Replace values > 100 with NaN in numeric columns
                 df[df.select_dtypes(include='number').columns] = df.select_dtypes(
-                    include='number').where(lambda x: x <= 100)
+                    include='number').where(lambda x: (x > 0) & (x < 100))
 
                 dataframes.append(df)
             except Exception as e:
@@ -304,13 +304,13 @@ class Analysis:
         # Drop columns with only NaN values
         dropped_cols = df_selected.columns[df_selected.isna().all()].tolist()
         if dropped_cols:
-            logger.info("Dropped columns with all NaN values:", dropped_cols)
+            logger.info("Dropped columns with all NaN values: ", dropped_cols)
             df_selected = df_selected.drop(columns=dropped_cols)
 
         # Drop columns with constant values (same number across all rows)
         constant_cols = [col for col in df_selected.columns if df_selected[col].nunique(dropna=False) <= 1]
         if constant_cols:
-            logger.info("Dropped constant-value columns:", constant_cols)
+            logger.info("Dropped constant-value columns: ", constant_cols)
             df_selected = df_selected.drop(columns=constant_cols)
 
         # Compute Spearman correlation matrix
@@ -353,7 +353,7 @@ if __name__ == "__main__":
     # Loop over both configurations
     for memory_type in ["with_memory", "without_memory"]:
         # analysis.process_csv_files()
-        folder_path = os.path.join(output_path, memory_type, "processed_csvs")
+        folder_path = os.path.join(output_path, memory_type, "analysed")
 
         # Skip if folder doesn't exist or is empty
         if not os.path.isdir(folder_path) or not os.listdir(folder_path):
@@ -363,7 +363,7 @@ if __name__ == "__main__":
         analysis.logger.info(f"Processing: {memory_type}")
 
         avg_df = analysis.average_llm_results(
-            folder_path=os.path.join(output_path, memory_type, "processed_csvs"),
+            folder_path=os.path.join(output_path, memory_type, "analysed"),
             output_csv_path=os.path.join(output_path, f"avg_{memory_type}.csv")
         )
 
