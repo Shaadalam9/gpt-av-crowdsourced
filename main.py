@@ -98,7 +98,7 @@ def kill_ollama_linux():
         pids = result.stdout.strip().split()
 
         if not pids or pids == ['']:
-            logger.error("No 'ollama' process found on Linux/macOS.")
+            logger.info("No 'ollama' process found on Linux/macOS.")
             return
 
         # Kill each process found
@@ -124,7 +124,7 @@ def kill_ollama_windows():
         if "SUCCESS" in result.stdout.upper():
             logger.info("All 'ollama.exe' processes terminated on Windows.")
         elif "not found" in result.stdout.lower():
-            logger.error("No 'ollama.exe' process found on Windows.")
+            logger.info("No 'ollama.exe' process found on Windows.")
         else:
             logger.info(result.stdout.strip())
 
@@ -211,9 +211,9 @@ if __name__ == "__main__":
 
     # Loop over each seed in the configuration to run the processes.
     for seed in seed_list:
-
         # Get the shuffled list ONCE
         shuffled_images = get_shuffled_images(image_dir, seed)
+
         logger.info(f"\n============================\nRunning for seed: {seed}\n============================")
         run_ollama(prompt, shuffled_images, seed, use_history, max_memory)
         kill_ollama()

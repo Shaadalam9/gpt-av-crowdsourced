@@ -3,7 +3,7 @@
 
 ## Overview
 ![LLM Personas](figures/LLMs_personas.png)
-*A Ghibli-style persona illustration of the Large Language Models. 😁*
+*A Ghibli-style persona illustration of the Large Language Models. *😁
 
 ## Usage of the code
 The code is open-source and free to use. It is aimed for, but not limited to, academic research. We welcome forking of this repository, pull requests, and any contributions in the spirit of open science and open-source code 😍😄 .
@@ -25,44 +25,35 @@ git clone https://github.com/Shaadalam9/llms-av-crowdsourced
 
 **Step 2:**
 
-Create a new virtual environment
+Create a new virtual environment using the .yml file
 ```command line
-python -m venv venv
+conda env create -f environment.yml
 ```
+This will create a new conda environment with all the dependencies specified in the file.
+
 
 **Step 3:**
 
 Activate the virtual environment
 ```command line
-source venv/bin/activate
+conda activate myenv
 ```
 
-On Windows use
-```command line
-venv\Scripts\activate
-```
 
 **Step 4:**
 
-Install dependencies
-```command line
-pip install -r requirements.txt
-```
-
-**Step 5:**
-
 Download the supplementary material from [4TU Research Data](xxxx) and save them in the current folder.
 
-**Step 6:**
+**Step 5:**
 Download Ollama locally in your system and run it. [Link](https://ollama.com/)
 
-**Step 7:**
+**Step 6:**
 Run the main.py script for analysing the images.
 ```command line
 python3 main.py
 ```
 
-**Step 8:**
+**Step 7:**
 Run the analysis.py script for getting the comaprison of the LLMs output and the crowdsourced results.
 ```command line
 python3 analysis.py
@@ -89,7 +80,7 @@ Configuration of the project needs to be defined in `llms-av-crowdsourced/config
 - **history_intro** [String]: Contains introductory text that precedes the conversation history, informing the model how previous responses may influence its current decision-making.
 - **current_image_instruction** [String]: Offers specific instructions for interpreting the current image, guiding the model on how to generate its response.
 - **prompt** [String]: The main directive provided to the model for evaluating the image. This prompt instructs the model to first interpret the meaning of any digital display, then provide a confidence rating in this format:  
-  `"Meaning: [briefly explain]. Confidence: [numeric value]"`
+  `"Confidence: [numeric value]. Meaning: [briefly explain]"`
 
 
 ## Results
