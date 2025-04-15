@@ -12,6 +12,9 @@ from custom_logger import CustomLogger
 from logmod import logs
 from ollama import OllamaClient
 
+logs(show_level='info', show_color=True)
+logger = CustomLogger(__name__)  # use custom logger
+
 # Paths
 output_path = common.get_configs("output")
 data_path = common.get_configs("data")
@@ -301,13 +304,13 @@ class Analysis:
         # Drop columns with only NaN values
         dropped_cols = df_selected.columns[df_selected.isna().all()].tolist()
         if dropped_cols:
-            print("Dropped columns with all NaN values:", dropped_cols)
+            logger.info("Dropped columns with all NaN values:", dropped_cols)
             df_selected = df_selected.drop(columns=dropped_cols)
 
         # Drop columns with constant values (same number across all rows)
         constant_cols = [col for col in df_selected.columns if df_selected[col].nunique(dropna=False) <= 1]
         if constant_cols:
-            print("Dropped constant-value columns:", constant_cols)
+            logger.info("Dropped constant-value columns:", constant_cols)
             df_selected = df_selected.drop(columns=constant_cols)
 
         # Compute Spearman correlation matrix
@@ -363,7 +366,6 @@ if __name__ == "__main__":
             folder_path=os.path.join(output_path, memory_type, "processed_csvs"),
             output_csv_path=os.path.join(output_path, f"avg_{memory_type}.csv")
         )
-        print(avg_df)
 
         analysis.plot_ehmi_vs_llm(
             mapping_csv_path=os.path.join(data_path, "mapping.csv"),

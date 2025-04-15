@@ -8,6 +8,11 @@ from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
 from deepseek_vl2.utils.io import load_pil_images
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import messages_from_dict, messages_to_dict
+from custom_logger import CustomLogger
+from logmod import logs
+
+logs(show_level='info', show_color=True)
+logger = CustomLogger(__name__)  # use custom logger
 
 # Disable parallelism in tokenizer warnings for smoother execution.
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -199,7 +204,7 @@ class VisualQuestionAnswering:
 
         # Save the updated DataFrame to the CSV file.
         df.to_csv(output_csv, index=False)
-        print(f"\nSaved DeepSeek-VL2 output for {image_name} to {output_csv}")
+        logger.info(f"\nSaved DeepSeek-VL2 output for {image_name} to {output_csv}")
         return answer
 
 

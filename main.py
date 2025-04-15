@@ -7,6 +7,11 @@ import random
 import subprocess
 import signal
 import platform
+from custom_logger import CustomLogger
+from logmod import logs
+
+logs(show_level='info', show_color=True)
+logger = CustomLogger(__name__)  # use custom logger
 
 # Create the output folder if it doesn't exist already.
 if common.get_configs("use_history"):
@@ -17,7 +22,7 @@ else:
 # Define the output directory and create the specific subdirectory
 dir_path = os.path.join(common.get_configs("output"), folder_name)
 os.makedirs(dir_path, exist_ok=True)
-print(f"Created folder: {dir_path}")
+logger.info(f"Created folder: {dir_path}")
 
 
 def get_shuffled_images(folder_path, seed):
@@ -45,7 +50,7 @@ def get_shuffled_images(folder_path, seed):
     return random.sample(image_paths, len(image_paths))
 
 
-def run_ollama(prompt, image_dir, seed, use_history, max_memory):
+def run_ollama(prompt, image_paths, seed, use_history, max_memory):
     """
     Run the OllamaClient on a set of images with the provided prompt.
 
@@ -60,15 +65,13 @@ def run_ollama(prompt, image_dir, seed, use_history, max_memory):
         use_history (bool): Whether to use conversation history.
         max_memory (int): Maximum number of memory messages to be used.
     """
-    print("\n--- Running OllamaClient ---\n")
+    logger.info("\n--- Running OllamaClient ---\n")
     # Get the list of model names from the configuration.
     model_list = common.get_configs("model_names")
-    # Get the shuffled list of image paths.
-    image_paths = get_shuffled_images(image_dir, seed)
 
     # Process each model on the list of images.
     for model in model_list:
-        print(f"\n--- Processing with model: {model} ---\n")
+        logger.info(f"\n--- Processing with model: {model} ---\n")
         client = OllamaClient(
             model_name=model,
             use_history=use_history,
@@ -95,18 +98,18 @@ def kill_ollama_linux():
         pids = result.stdout.strip().split()
 
         if not pids or pids == ['']:
-            print("No 'ollama' process found on Linux/macOS.")
+            logger.error("No 'ollama' process found on Linux/macOS.")
             return
 
         # Kill each process found
         for pid in pids:
-            print(f"Killing ollama process with PID: {pid}")
+            logger.info(f"Killing ollama process with PID: {pid}")
             os.kill(int(pid), signal.SIGKILL)
 
-        print("All 'ollama' processes terminated on Linux/macOS.")
+        logger.info("All 'ollama' processes terminated on Linux/macOS.")
 
     except Exception as e:
-        print(f"Error on Linux/macOS: {e}")
+        logger.error(f"Error on Linux/macOS: {e}")
 
 
 def kill_ollama_windows():
@@ -119,14 +122,14 @@ def kill_ollama_windows():
 
         # Check if the command was successful
         if "SUCCESS" in result.stdout.upper():
-            print("All 'ollama.exe' processes terminated on Windows.")
+            logger.info("All 'ollama.exe' processes terminated on Windows.")
         elif "not found" in result.stdout.lower():
-            print("No 'ollama.exe' process found on Windows.")
+            logger.error("No 'ollama.exe' process found on Windows.")
         else:
-            print(result.stdout.strip())
+            logger.info(result.stdout.strip())
 
     except Exception as e:
-        print(f"Error on Windows: {e}")
+        logger.error(f"Error on Windows: {e}")
 
 
 def kill_ollama():
@@ -141,10 +144,10 @@ def kill_ollama():
     elif current_os == "Windows":
         kill_ollama_windows()
     else:
-        print(f"Unsupported OS: {current_os}")
+        logger.error(f"Unsupported OS: {current_os}")
 
 
-def run_vqa(prompt, image_dir, seed, use_history, max_memory):
+def run_vqa(prompt, image_paths, seed, use_history, max_memory):
     """
     Run visual question answering using DeepSeek's VisualQuestionAnswering.
 
@@ -157,20 +160,18 @@ def run_vqa(prompt, image_dir, seed, use_history, max_memory):
         use_history (bool): Whether to use conversation history in processing.
         max_memory (int): Maximum number of memory messages allowed.
     """
-    print("\n--- Running Visual Question Answering (DeepSeek) ---\n")
+    logger.info("\n--- Running Visual Question Answering (DeepSeek) ---\n")
     # Initialize the VisualQuestionAnswering instance with history settings.
     vqa = VisualQuestionAnswering(use_history=use_history, max_memory_messages=max_memory)
-    # Retrieve and shuffle the list of image paths.
-    image_paths = get_shuffled_images(image_dir, seed)
 
     # Process each image and print the answer from DeepSeek.
     for image_path in image_paths:
         image_file = os.path.basename(image_path)
         answer = vqa.ask_question(image_path, prompt, seed=seed)
-        print(f"\n[{image_file}] DeepSeek Response: {answer}")
+        logger.info(f"\n[{image_file}] DeepSeek Response: {answer}")
 
 
-def run_chatgpt(prompt, image_dir, seed, use_history, max_memory):
+def run_chatgpt(prompt, image_paths, seed, use_history, max_memory):
     """
     Run image analysis using GPT-4 Vision Analyser.
 
@@ -184,9 +185,7 @@ def run_chatgpt(prompt, image_dir, seed, use_history, max_memory):
         use_history (bool): Whether to use conversation history.
         max_memory (int): Maximum number of history messages allowed.
     """
-    print("\n--- Running GPT-4 Vision Analyser ---\n")
-    # Get the shuffled list of image paths.
-    image_paths = get_shuffled_images(image_dir, seed)
+    logger.info("\n--- Running GPT-4 Vision Analyser ---\n")
 
     # Process each image individually.
     for image_path in image_paths:
@@ -199,7 +198,7 @@ def run_chatgpt(prompt, image_dir, seed, use_history, max_memory):
         )
         result = analyser.analyse_image(seed=seed)
         if result:
-            print(f"\n[{image_file}] GPT-4 Vision Response: {result}")
+            logger.info(f"\n[{image_file}] GPT-4 Vision Response: {result}")
 
 
 if __name__ == "__main__":
@@ -212,8 +211,11 @@ if __name__ == "__main__":
 
     # Loop over each seed in the configuration to run the processes.
     for seed in seed_list:
-        print(f"\n============================\nRunning for seed: {seed}\n============================")
-        # run_ollama(prompt, image_dir, seed, use_history, max_memory)
-        # kill_ollama()
-        # run_vqa(prompt, image_dir, seed, use_history, max_memory)
-        run_chatgpt(prompt, image_dir, seed, use_history, max_memory)
+
+        # Get the shuffled list ONCE
+        shuffled_images = get_shuffled_images(image_dir, seed)
+        logger.info(f"\n============================\nRunning for seed: {seed}\n============================")
+        run_ollama(prompt, shuffled_images, seed, use_history, max_memory)
+        kill_ollama()
+        run_vqa(prompt, shuffled_images, seed, use_history, max_memory)
+        run_chatgpt(prompt, shuffled_images, seed, use_history, max_memory)

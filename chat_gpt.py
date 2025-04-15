@@ -6,6 +6,11 @@ import common
 from openai import OpenAI  # type: ignore
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import messages_from_dict, messages_to_dict
+from custom_logger import CustomLogger
+from logmod import logs
+
+logs(show_level='info', show_color=True)
+logger = CustomLogger(__name__)  # use custom logger
 
 
 class GPT_ImageAnalyser:
@@ -164,7 +169,7 @@ class GPT_ImageAnalyser:
 
         # Save the updated DataFrame to CSV.
         df.to_csv(self.output_csv, index=False)
-        print(f"\nSaved GPT-4 Vision output for {image_name} to {self.output_csv}")
+        logger.info(f"\nSaved GPT-4 Vision output for {image_name} to {self.output_csv}")
         return content
 
 

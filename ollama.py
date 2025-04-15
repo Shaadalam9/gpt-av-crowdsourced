@@ -13,10 +13,15 @@ import common
 from logmod import logs
 from datetime import datetime
 import hashlib
+from custom_logger import CustomLogger
+from logmod import logs
 
 # LangChain for conversation memory
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import messages_from_dict, messages_to_dict
+
+logs(show_level='info', show_color=True)
+logger = CustomLogger(__name__)  # use custom logger
 
 
 class OllamaClient:
@@ -99,7 +104,7 @@ class OllamaClient:
         Start the Ollama server as a subprocess.
         This method calls the 'ollama serve' command.
         """
-        print("Starting Ollama server...")
+        logger.info("Starting Ollama server...")
         subprocess.Popen(["ollama", "serve"])
         # Allow some time for the server to start.
         time.sleep(2)
@@ -113,7 +118,7 @@ class OllamaClient:
         if not self.is_port_open():
             self.start_ollama()
             if not self.is_port_open():
-                print("Ollama failed to start.")
+                logger.error("Ollama failed to start.")
                 exit(1)
 
     def model_exists(self):
@@ -127,7 +132,7 @@ class OllamaClient:
             result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
             return self.model_name in result.stdout
         except Exception as e:
-            print(f"Failed to check model existence: {e}")
+            logger.error(f"Failed to check model existence: {e}")
             return False
 
     def pull_model(self):
@@ -135,11 +140,11 @@ class OllamaClient:
         Pull the specified model from Ollama if it is not available locally.
         Exits the program if the model cannot be pulled.
         """
-        print(f"Pulling model '{self.model_name}'...")
+        logger.info(f"Pulling model '{self.model_name}'...")
         try:
             subprocess.run(["ollama", "pull", self.model_name], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error pulling model '{self.model_name}': {e}")
+            logger.error(f"Error pulling model '{self.model_name}': {e}")
             exit(1)
 
     def ensure_model_available(self):
@@ -255,7 +260,7 @@ class OllamaClient:
 
         # If no images are provided, exit the function.
         if not image_paths:
-            print("No supported image files provided.")
+            logger.error("No supported image files provided.")
             return
 
         # Attempt to load an existing CSV, or create a new DataFrame if the file doesn't exist.
@@ -274,7 +279,7 @@ class OllamaClient:
 
             # Check if this image has already been processed for the current model.
             if pd.notna(df.loc[df["image"] == image_name, self.model_name]).any():  # type: ignore
-                print(f"Skipping '{image_name}' (already processed).")
+                logger.info(f"Skipping '{image_name}' (already processed).")
                 continue
 
             # Encode the image in base64 format.
@@ -350,14 +355,14 @@ class OllamaClient:
                         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
                 else:
-                    print(f"Request failed with status code {response.status_code}")
+                    logger.error(f"Request failed with status code {response.status_code}")
             except requests.exceptions.RequestException as e:
-                print(f"Failed to send request to Ollama: {e}")
+                logger.error(f"Failed to send request to Ollama: {e}")
 
         # Ensure the output directory exists and save the results to CSV.
         os.makedirs(os.path.dirname(output_csv), exist_ok=True)
         df.to_csv(output_csv, index=False)
-        print(f"\nSaved results to {output_csv}")
+        logger.info(f"\nSaved results to {output_csv}")
 
     def generate_simple_text(self, sentence, model="deepseek-r1:14b", prompt="Tell me a story.",):
         """
