@@ -26,9 +26,8 @@ logger = CustomLogger(__name__)  # use custom logger
 
 class OllamaClient:
     """
-    A client for interacting with an Ollama server for LLM+vision processing.
-    Handles image encoding, prompt generation, conversation memory tracking, 
-    logging of interactions, and saving results to CSV.
+    A client for interacting with an Ollama server for LLM+vision processing. Handles image encoding,
+    prompt generation, conversation memory tracking, logging of interactions, and saving results to CSV.
     """
 
     def __init__(self,
