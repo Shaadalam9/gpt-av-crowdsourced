@@ -17,16 +17,16 @@ logger = CustomLogger(__name__)  # use custom logger
 
 # Paths
 output_path = common.get_configs("output")
-data_path = common.get_configs("data")
+crowdsourced_data = common.get_configs("crowdsourced_data")
 
 
 class Analysis:
     """
-    A class for processing CSV files, averaging LLM results, 
-    and plotting comparisons between eHMI means and LLM scores.
+    A class for processing CSV files, averaging LLM results,and plotting comparisons
+    between eHMI means and LLM scores.
     """
 
-    # Centralized column rename mapping
+    # Centralised column rename mapping
     RENAME_MAP = {
         'minicpm-v': 'MiniCPM-V',
         'llava:13b': 'LLaVA 13B',
@@ -56,7 +56,7 @@ class Analysis:
         self.logger = CustomLogger(__name__)
         self.template = common.get_configs('plotly_template')
 
-        # Initialize the client for generating text ratings
+        # Initialise the client for generating text ratings
         self.client = OllamaClient()
 
         # Constants (moved from module-level)
@@ -78,14 +78,14 @@ class Analysis:
             save_final (bool, optional): Whether to save a copy to the final folder.
         """
         output_folder = "_output"
-        output_final = "figures"
+        figures = common.get_configs("figures")
         os.makedirs(output_folder, exist_ok=True)
-        os.makedirs(output_final, exist_ok=True)
+        os.makedirs(figures, exist_ok=True)
 
         self.logger.info(f"Saving html file for {filename}.")
         py.offline.plot(fig, filename=os.path.join(output_folder, filename + ".html"))
         if save_final:
-            py.offline.plot(fig, filename=os.path.join(output_final, filename + ".html"), auto_open=False)
+            py.offline.plot(fig, filename=os.path.join(figures, filename + ".html"), auto_open=False)
 
         try:
             if self.save_png:
@@ -94,7 +94,7 @@ class Analysis:
                                 width=width, height=height, scale=self.scale)
                 if save_final:
                     shutil.copy(os.path.join(output_folder, filename + ".png"),
-                                os.path.join(output_final, filename + ".png"))
+                                os.path.join(figures, filename + ".png"))
             if self.save_eps:
                 self.logger.info(f"Saving eps file for {filename}.")
                 fig.write_image(os.path.join(output_folder, filename + ".eps"),
@@ -125,10 +125,10 @@ class Analysis:
                 try:
                     df = pd.read_csv(file_path)
                     self.logger.info(f"Processing {file_path} now....")
-                    columns_to_analyze = [col for col in df.columns if col != "image"]
+                    columns_to_analyse = [col for col in df.columns if col != "image"]
 
                     for index, row in df.iterrows():
-                        for col in columns_to_analyze:
+                        for col in columns_to_analyse:
                             text = row[col]
                             if pd.isna(text) or text == "":
                                 rating = math.nan
@@ -256,7 +256,9 @@ class Analysis:
             fig.update_layout(
                 title=f"",  # noqa: F541
                 xaxis_title="Mean response from the participants",
-                yaxis_title=self.RENAME_MAP.get(col, col)
+                yaxis_title=self.RENAME_MAP.get(col, col),
+                xaxis=dict(range=[0, 100]),  # Ensures x-axis always goes 0-100
+                yaxis=dict(range=[0, 100]),  # Ensures y-axis always goes 0-100
             )
 
             self.save_plotly_figure(fig, f"scatter_plot_{col}_{memory_type}", save_final=save_final)
@@ -273,7 +275,7 @@ class Analysis:
                 ehmi_csv_path (str): Path to the EHMI CSV file.
                 avg_df (pd.DataFrame): DataFrame containing average values.
                 memory_type (str): Label for naming the output file based on memory type.
-                save_final (bool): Whether to finalize and persist the saved figure (default: False).
+                save_final (bool): Whether to finalise and persist the saved figure (default: False).
 
             The function:
                 - Merges input data using a helper method.
@@ -282,7 +284,7 @@ class Analysis:
                 - Drops columns with only NaN values and prints them.
                 - Computes Spearman correlation.
                 - Renames columns for readability in the heatmap.
-                - Saves a heatmap visualization using Plotly.
+                - Saves a heatmap visualisation using Plotly.
         """
         # Prepare merged DataFrame
         df = self._prepare_merged_df(mapping_csv_path, ehmi_csv_path, avg_df)
@@ -290,7 +292,7 @@ class Analysis:
         # Encode 'lang' column: 'en' → 0, 'es' → 1
         df['lang_encoded'] = df['lang'].map({'en': 0, 'es': 1})
 
-        # Columns to analyze
+        # Columns to analyse
         selected_columns = [
             'minicpm-v', 'llava:13b', 'llava:34b', 'llava-llama3',
             'llama3.2-vision', 'moondream', 'bakllava', 'granite3.2-vision',
@@ -368,22 +370,22 @@ if __name__ == "__main__":
         )
 
         analysis.plot_ehmi_vs_llm(
-            mapping_csv_path=os.path.join(data_path, "mapping.csv"),
-            ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
+            mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
+            ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
             avg_df=avg_df,
             memory_type=memory_type, save_final=True
         )
 
         figures = analysis.plot_individual_ehmi_vs_llm(
-            mapping_csv_path=os.path.join(data_path, "mapping.csv"),
-            ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
+            mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
+            ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
             avg_df=avg_df,
             memory_type=memory_type, save_final=True
         )
 
         analysis.plot_spearman_correlation(
-            mapping_csv_path=os.path.join(data_path, "mapping.csv"),
-            ehmi_csv_path=os.path.join(data_path, "ehmis.csv"),
+            mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
+            ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
             avg_df=avg_df, memory_type=memory_type,
             save_final=True
         )

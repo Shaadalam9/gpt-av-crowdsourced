@@ -29,7 +29,7 @@ class VisualQuestionAnswering:
 
     def __init__(self, model_path="deepseek-ai/deepseek-vl2-tiny", use_history=True, max_memory_messages=6):
         """
-        Initialize the VisualQuestionAnswering instance.
+        Initialise the VisualQuestionAnswering instance.
 
         Args:
             model_path (str): Path or identifier for the DeepSeek VL2 model.
@@ -44,7 +44,7 @@ class VisualQuestionAnswering:
         self.max_memory_messages = max_memory_messages
         # File to store conversation memory.
         self.memory_file = os.path.join(common.get_configs("output"), "deepseek_memory.json")
-        # Initialize conversation memory using LangChain.
+        # Initialise conversation memory using LangChain.
         self.memory = ConversationBufferMemory(return_messages=True)
         self.load_memory()
         # Load model and processor.
@@ -71,7 +71,7 @@ class VisualQuestionAnswering:
         """
         Save the current conversation memory to a JSON file.
 
-        The conversation history is serialized to a dictionary format and written to disk.
+        The conversation history is serialised to a dictionary format and written to disk.
         """
         messages = messages_to_dict(self.memory.chat_memory.messages)
         with open(self.memory_file, "w") as f:

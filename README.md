@@ -64,8 +64,10 @@ python3 analysis.py
 
 Configuration of the project needs to be defined in `llms-av-crowdsourced/config`. Please use the `default.config` file for the required structure. If no custom config file is provided, `default.config` is used. The config file has the following parameters:
 
-- **data** [String]: Specifies the directory where your image files are stored (e.g., `"data"`).
-- **output** [String]: Directory path where model outputs will be saved (e.g., `"_output"`).
+- **data** [String]: Specifies the directory where your image files are stored.
+- **output** [String]: Directory path where model outputs will be saved.
+- **crowdsourced_data** [String]: Specifies the directory path where crowdsourcing results are present.
+- **figures** [String]: Directory path to save final figures.
 - **font_family** [String]: Lists the font families to be used in visualisation outputs (e.g., `"Open Sans, verdana, arial, sans-serif"`).
 - **font_size** [Integer]: Sets the base font size for graphs and other visual elements (e.g., `12`).
 - **random_seed** [List of Integers]: A list of seed values for reproducible runs (e.g., `[42]`).

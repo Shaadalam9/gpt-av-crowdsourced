@@ -15,7 +15,7 @@ logger = CustomLogger(__name__)  # use custom logger
 
 class GPT_ImageAnalyser:
     """
-    A class to analyze images using the GPT-4 Vision model.
+    A class to analyse images using the GPT-4 Vision model.
 
     This class encodes the provided image, sends it to the GPT-4 Vision API along with a prompt,
     processes conversation history, updates a CSV file with the response, and manages conversation memory.
@@ -23,10 +23,10 @@ class GPT_ImageAnalyser:
 
     def __init__(self, image_path, prompt, use_history=True, max_memory_messages=6):
         """
-        Initialize the GPT_ImageAnalyser with image, prompt, and conversation history settings.
+        Initialise the GPT_ImageAnalyser with image, prompt, and conversation history settings.
 
         Args:
-            image_path (str): The path to the image file to be analyzed.
+            image_path (str): The path to the image file to be analysed.
             prompt (str): The prompt or instruction to be provided to the model.
             use_history (bool): Flag indicating whether to include conversation history.
             max_memory_messages (int): The maximum number of conversation history messages to store.
@@ -40,11 +40,11 @@ class GPT_ImageAnalyser:
         self.output_csv = os.path.join(common.get_configs("output"),
                                        f"output_{common.get_configs('random_seed')}.csv")
         self.model_name = "gpt-4o"
-        # Initialize the OpenAI client for API calls.
+        # Initialise the OpenAI client for API calls.
         self.client = OpenAI(api_key=common.get_secrets("OPENAI_API_KEY"))  # type: ignore
         # File path to save conversation memory.
         self.memory_file = os.path.join(common.get_configs("output"), "chatgpt_memory.json")
-        # Initialize conversation memory using LangChain.
+        # Initialise conversation memory using LangChain.
         self.memory = ConversationBufferMemory(return_messages=True)
         # Load any existing conversation memory from file.
         self.load_memory()
@@ -75,7 +75,7 @@ class GPT_ImageAnalyser:
 
     def analyse_image(self, seed=42):
         """
-        Analyze the image using GPT-4 Vision and update the output CSV with the generated response.
+        Analyse the image using GPT-4 Vision and update the output CSV with the generated response.
 
         This method encodes the image to base64, builds the prompt (including conversation history if enabled),
         sends the request to the GPT-4 Vision model, saves the response to a CSV file,

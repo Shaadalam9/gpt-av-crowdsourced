@@ -1,8 +1,7 @@
 # Runs and output folders
 runs/
 _output/
-output.csv
-final/
+crowd_data/
 
 # Data folders
 data/

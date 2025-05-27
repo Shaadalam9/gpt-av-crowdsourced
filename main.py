@@ -161,7 +161,8 @@ def run_vqa(prompt, image_paths, seed, use_history, max_memory):
         max_memory (int): Maximum number of memory messages allowed.
     """
     logger.info("\n--- Running Visual Question Answering (DeepSeek) ---\n")
-    # Initialize the VisualQuestionAnswering instance with history settings.
+
+    # Initialise the VisualQuestionAnswering instance with history settings.
     vqa = VisualQuestionAnswering(use_history=use_history, max_memory_messages=max_memory)
 
     # Process each image and print the answer from DeepSeek.
@@ -203,7 +204,7 @@ def run_chatgpt(prompt, image_paths, seed, use_history, max_memory):
 
 if __name__ == "__main__":
     # Retrieve configuration settings from the common configuration module.
-    image_dir = common.get_configs("data")
+    image_dir = common.get_configs("crowdsourced_data")
     prompt = common.get_configs("prompt")
     use_history = common.get_configs("use_history")
     max_memory = common.get_configs("max_memory_messages")

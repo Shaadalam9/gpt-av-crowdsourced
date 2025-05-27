@@ -14,7 +14,6 @@ from logmod import logs
 from datetime import datetime
 import hashlib
 from custom_logger import CustomLogger
-from logmod import logs
 
 
 # LangChain for conversation memory
@@ -39,7 +38,7 @@ class OllamaClient:
                  use_history=True,
                  max_memory_messages=6):
         """
-        Initialize the OllamaClient with the given parameters.
+        Initialise the OllamaClient with the given parameters.
 
         Args:
             model_name (str): Name of the model to use.
@@ -52,7 +51,7 @@ class OllamaClient:
         logs(show_level=common.get_configs("logger_level"), show_color=True)
         self.template = common.get_configs('plotly_template')
 
-        # Initialize instance attributes.
+        # Initialise instance attributes.
         self.model_name = model_name
         self.host = host
         self.port = port
@@ -65,7 +64,7 @@ class OllamaClient:
 
         self.use_history = use_history
         self.max_memory_messages = max_memory_messages
-        # Initialize the conversation memory using LangChain.
+        # Initialise the conversation memory using LangChain.
         self.memory = ConversationBufferMemory(return_messages=True)
 
         # Ensure the Ollama server is running and the model is available.
