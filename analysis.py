@@ -157,7 +157,7 @@ class Analysis:
                 df = pd.read_csv(file)
                 # Replace values > 100 with NaN in numeric columns
                 df[df.select_dtypes(include='number').columns] = df.select_dtypes(
-                    include='number').where(lambda x: (x > 0) & (x < 100))
+                    include='number').where(lambda x: (x >= 0) & (x <= 100))
 
                 dataframes.append(df)
             except Exception as e:
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     analysis = Analysis()
     # Loop over both configurations
     for memory_type in ["with_memory", "without_memory"]:
-        analysis.process_csv_files()
+        # analysis.process_csv_files()
         folder_path = os.path.join(output_path, memory_type, "analysed")
 
         # Skip if folder doesn't exist or is empty
