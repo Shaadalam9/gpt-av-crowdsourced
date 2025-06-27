@@ -18,6 +18,8 @@ logger = CustomLogger(__name__)  # use custom logger
 # Paths
 output_path = common.get_configs("output")
 crowdsourced_data = common.get_configs("crowdsourced_data")
+font_size = common.get_configs("font_size")
+font_family = common.get_configs("font_family")
 
 
 class Analysis:
@@ -29,18 +31,18 @@ class Analysis:
     # Centralised column rename mapping
     RENAME_MAP = {
         'minicpm-v': 'MiniCPM-V',
-        'llava:13b': 'LLaVA 13B',
-        'llava:34b': 'LLaVA 34B',
-        'llava-llama3': 'LLaVA-LLaMA3',
-        'llama3.2-vision': 'LLaMA3.2 Vision',
-        'moondream': 'MoonDream',
+        'llava:13b': 'LLaVA-13B',
+        'llava:34b': 'LLaVA-34B',
+        'llava-llama3': 'LLaVA-LLaMA-3',
+        'llama3.2-vision': 'LLaMA 3.2 Visionn',
+        'moondream': 'Moondream',
         'bakllava': 'BakLLaVA',
-        'granite3.2-vision': 'Granite3.2 Vision',
+        'granite3.2-vision': 'Granite Vision 3.2',
         'llava-phi3': 'LLaVA-Phi3',
-        'gemma3:12b': 'Gemma3 12B',
-        'gemma3:27b': 'Gemma3 27B',
-        'deepseek-vl2': 'DeepSeek VL2',
-        'gpt-4o': 'GPT-4o',
+        'gemma3:12b': 'Gemma 3: 12B',
+        'gemma3:27b': 'Gemma 3: 27B',
+        'deepseek-vl2': 'DeepSeek-VL2',
+        'gpt-4o': 'ChatGPT-4o',
         'cross': 'Cross',
         'wait': 'Wait',
         'egocentric': 'Egocentric',
@@ -67,7 +69,7 @@ class Analysis:
         self.text_size = 12
         self.scale = 1  # scale=3 hangs often
 
-    def save_plotly_figure(self, fig, filename, width=1600, height=900, save_final=True):
+    def save_plotly_figure(self, fig, filename, width=1600, height=1400, save_final=True):
         """Saves a Plotly figure as HTML, PNG, and EPS formats.
 
         Args:
@@ -219,10 +221,56 @@ class Analysis:
             ))
 
         fig.update_layout(
-            title="Comparison of eHMI Mean vs LLM Score Columns by Text",
-            xaxis_title="eHMI Mean",
-            yaxis_title="LLM Score",
-            legend_title="LLM Score Column"
+            title=dict(
+                text="",
+                font=dict(
+                    family=font_family,
+                    size=font_size
+                )
+            ),
+            font=dict(  # global font (affects legend, hover, etc.)
+                family=font_family,
+                size=font_size
+            ),
+            xaxis=dict(
+                title=dict(
+                    text="eHMI Mean",
+                    font=dict(
+                        family=font_family,
+                        size=font_size
+                    )
+                ),
+                tickfont=dict(
+                    family=font_family,
+                    size=font_size
+                )
+            ),
+            yaxis=dict(
+                title=dict(
+                    text="LLM Score",
+                    font=dict(
+                        family=font_family,
+                        size=font_size
+                    )
+                ),
+                tickfont=dict(
+                    family=font_family,
+                    size=font_size
+                )
+            ),
+            legend=dict(
+                title=dict(
+                    text="LLM Score Column",
+                    font=dict(
+                        family=font_family,
+                        size=font_size
+                    )
+                ),
+                font=dict(
+                    family=font_family,
+                    size=font_size
+                )
+            )
         )
         self.save_plotly_figure(fig, f"merged_{memory_type}", save_final=save_final)
 
@@ -251,16 +299,57 @@ class Analysis:
                 y=merged_df[col],
                 mode='markers',
                 name=self.RENAME_MAP.get(col, col),
-                text=merged_df["text"]
+                text=merged_df["text"],
+                marker=dict(color='red',
+                            size=14)
             ))
             fig.update_layout(
-                title=f"",  # noqa: F541
-                xaxis_title="Mean response from the participants",
-                yaxis_title=self.RENAME_MAP.get(col, col),
-                xaxis=dict(range=[0, 100]),  # Ensures x-axis always goes 0-100
-                yaxis=dict(range=[0, 100]),  # Ensures y-axis always goes 0-100
+                title=dict(
+                    text="",
+                    font=dict(
+                        family=font_family,
+                        size=font_size
+                    )
+                ),
+                font=dict(
+                    family=font_family,
+                    size=font_size
+                ),
+                xaxis=dict(
+                    title=dict(
+                        text="Mean response from the participants",
+                        font=dict(
+                            family=font_family,
+                            size=font_size
+                        )
+                    ),
+                    tickfont=dict(
+                        family=font_family,
+                        size=font_size
+                    ),
+                    range=[0, 100]
+                ),
+                yaxis=dict(
+                    title=dict(
+                        text=self.RENAME_MAP.get(col, col),
+                        font=dict(
+                            family=font_family,
+                            size=font_size
+                        )
+                    ),
+                    tickfont=dict(
+                        family=font_family,
+                        size=font_size
+                    ),
+                    range=[0, 100]
+                ),
+                legend=dict(
+                    font=dict(
+                        family=font_family,
+                        size=font_size
+                    )
+                )
             )
-
             self.save_plotly_figure(fig, f"scatter_plot_{col}_{memory_type}", save_final=save_final)
 
     def plot_spearman_correlation(self, mapping_csv_path, ehmi_csv_path, avg_df, memory_type, save_final=False):
@@ -339,9 +428,22 @@ class Analysis:
             width=1600,
             height=1600,
             coloraxis_showscale=False,
-            font=dict(size=16),
-            xaxis=dict(tickfont=dict(size=20)),  # for x-axis labels
-            yaxis=dict(tickfont=dict(size=20))   # for y-axis labels
+            font=dict(
+                family=font_family,
+                size=font_size
+            ),
+            xaxis=dict(
+                tickfont=dict(
+                    family=font_family,
+                    size=font_size
+                )
+            ),
+            yaxis=dict(
+                tickfont=dict(
+                    family=font_family,
+                    size=font_size
+                )
+            )
         )
 
         # Save figure using class method
