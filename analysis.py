@@ -436,7 +436,8 @@ class Analysis:
                 tickfont=dict(
                     family=font_family,
                     size=font_size
-                )
+                ),
+                tickangle=-45,
             ),
             yaxis=dict(
                 tickfont=dict(
