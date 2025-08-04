@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import shutil
 import pandas as pd
@@ -411,6 +412,50 @@ class Analysis:
         self.save_plotly_figure(fig, f"spearman_correlation_matrix_{memory_type}",
                                 width=1600, height=900, save_final=save_final)
 
+    def compute_stats_with_text(self, main_csv_path, mapping_csv_path):
+        # Read CSVs
+        df = pd.read_csv(main_csv_path)
+        mapping = pd.read_csv(mapping_csv_path)
+
+        # Extract 'id' from image filename (image_{i})
+        df['id'] = df['image'].apply(lambda x: int(re.search(
+            r'image_(\d+)', x).group(1)) if pd.notnull(x) else None)  # type: ignore
+
+        # Merge text column onto main df
+        df = df.merge(mapping, on='id', how='left')
+
+        # Stats columns
+        columns = [
+            "gpt-4o", "minicpm-v", "llava:13b", "llava:34b", "llava-llama3",
+            "llama3.2-vision", "moondream", "bakllava", "granite3.2-vision",
+            "llava-phi3", "gemma3:12b", "gemma3:27b", "deepseek-vl2"
+        ]
+
+        for col in columns:
+            max_val = df[col].max()
+            min_val = df[col].min()
+
+            max_rows = df[df[col] == max_val][['image', 'text']]
+            min_rows = df[df[col] == min_val][['image', 'text']]
+
+            max_images = ', '.join(max_rows['image'].tolist())
+            max_texts = ', '.join(max_rows['text'].tolist())
+            min_images = ', '.join(min_rows['image'].tolist())
+            min_texts = ', '.join(min_rows['text'].tolist())
+
+            logger.info(f"\n==== {col} ====")
+            logger.info(f"Mean:   {df[col].mean():.2f}")
+            logger.info(f"Std:    {df[col].std():.2f}")
+            logger.info(f"Median: {df[col].median():.2f}")
+
+            logger.info(f"Max value: {max_val}")
+            logger.info(f"  Images: {max_images}")
+            logger.info(f"  Texts:  {max_texts}")
+
+            logger.info(f"Min value: {min_val}")
+            logger.info(f"  Images: {min_images}")
+            logger.info(f"  Texts:  {min_texts}")
+
 
 # Example usage
 if __name__ == "__main__":
@@ -432,19 +477,19 @@ if __name__ == "__main__":
             output_csv_path=os.path.join(output_path, f"avg_{memory_type}.csv")
         )
 
-        # analysis.plot_ehmi_vs_llm(
-        #     mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
-        #     ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
-        #     avg_df=avg_df,
-        #     memory_type=memory_type, save_final=True
-        # )
+        analysis.plot_ehmi_vs_llm(
+            mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
+            ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
+            avg_df=avg_df,
+            memory_type=memory_type, save_final=True
+        )
 
-        # figures = analysis.plot_individual_ehmi_vs_llm(
-        #     mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
-        #     ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
-        #     avg_df=avg_df,
-        #     memory_type=memory_type, save_final=True
-        # )
+        figures = analysis.plot_individual_ehmi_vs_llm(
+            mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
+            ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
+            avg_df=avg_df,
+            memory_type=memory_type, save_final=True
+        )
 
         analysis.plot_spearman_correlation(
             mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
@@ -452,3 +497,6 @@ if __name__ == "__main__":
             avg_df=avg_df, memory_type=memory_type,
             save_final=True
         )
+
+        analysis.compute_stats_with_text(os.path.join(output_path, f"avg_{memory_type}.csv"),
+                                         os.path.join(crowdsourced_data, "mapping.csv"))
