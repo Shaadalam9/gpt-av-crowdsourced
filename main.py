@@ -1,6 +1,6 @@
-from ollama import OllamaClient
-from chat_gpt import GPT_ImageAnalyser
-from deepseek import VisualQuestionAnswering
+from models.ollama import OllamaClient
+from models.chat_gpt import GPT_ImageAnalyser
+from models.deepseek import VisualQuestionAnswering
 import common
 import os
 import random

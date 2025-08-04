@@ -1,6 +1,7 @@
 # Standard libraries
 import os
 import re
+import glob
 import math
 import pandas as pd
 import subprocess
@@ -30,12 +31,7 @@ class OllamaClient:
     prompt generation, conversation memory tracking, logging of interactions, and saving results to CSV.
     """
 
-    def __init__(self,
-                 model_name="gemma3:1b",
-                 host="localhost",
-                 port=11434,
-                 use_history=True,
-                 max_memory_messages=6):
+    def __init__(self, model_name="gemma3:1b", host="localhost", port=11434, use_history=True, max_memory_messages=6):
         """
         Initialise the OllamaClient with the given parameters.
 
@@ -63,12 +59,14 @@ class OllamaClient:
 
         self.use_history = use_history
         self.max_memory_messages = max_memory_messages
+
         # Initialise the conversation memory using LangChain.
         self.memory = ConversationBufferMemory(return_messages=True)
 
         # Ensure the Ollama server is running and the model is available.
         self.ensure_server_running()
         self.ensure_model_available()
+
         # Load conversation memory from file if it exists.
         self.load_memory()
 
@@ -105,6 +103,7 @@ class OllamaClient:
         """
         logger.info("Starting Ollama server...")
         subprocess.Popen(["ollama", "serve"])
+
         # Allow some time for the server to start.
         time.sleep(2)
 
@@ -363,7 +362,7 @@ class OllamaClient:
         df.to_csv(output_csv, index=False)
         logger.info(f"\nSaved results to {output_csv}")
 
-    def generate_simple_text(self, sentence, model="deepseek-r1:14b", prompt="Tell me a story.",):
+    def generate_simple_text(self, sentence, model="deepseek-r1:14b", prompt="Tell me a story."):
         """
         Generate text using a simple prompt and stream the response from the model.
 
@@ -433,8 +432,45 @@ class OllamaClient:
             return float(num_str) if '.' in num_str else int(num_str)
         return None
 
+    def process_csv_files(self, output=common.get_configs("output")):
+        """
+        Process CSV files in the defined subfolders ('with_memory' and 'without_memory')
+        by generating ratings for each text cell (excluding the 'image' column) and saving 
+        the results in an 'analysed' subfolder.
+        """
+        sub_folders = ["with_memory", "without_memory"]
+
+        for sub_folder in sub_folders:
+            folder_path = os.path.join(output, sub_folder)
+            if not os.path.exists(folder_path):
+                logger.info(f"Folder not found: {folder_path}")
+                continue
+
+            analysed_folder = os.path.join(folder_path, "analysed")
+            os.makedirs(analysed_folder, exist_ok=True)
+            csv_files = glob.glob(os.path.join(folder_path, "output_*.csv"))
+
+            for file_path in csv_files:
+                try:
+                    df = pd.read_csv(file_path)
+                    logger.info(f"Processing {file_path} now....")
+                    columns_to_analyse = [col for col in df.columns if col != "image"]
+
+                    for index, row in df.iterrows():
+                        for col in columns_to_analyse:
+                            text = row[col]
+                            if pd.isna(text) or text == "":
+                                rating = math.nan
+                            else:
+                                rating = self.generate_simple_text(sentence=text, model="deepseek-r1:14b")
+                            df.at[index, col] = rating
+
+                    output_file_path = os.path.join(analysed_folder, os.path.basename(file_path))
+                    df.to_csv(output_file_path, index=False)
+                    logger.info(f"Saved analysed file: {output_file_path}")
+                except Exception as e:
+                    logger.error(f"Error processing {file_path}: {e}")
+
 
 if __name__ == "__main__":
-    # This block can be used for testing the OllamaClient functionality.
-    # For now, it is left empty.
     pass

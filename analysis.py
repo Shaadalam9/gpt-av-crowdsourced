@@ -1,6 +1,5 @@
 import os
 import glob
-import math
 import shutil
 import pandas as pd
 import plotly.express as px
@@ -10,7 +9,7 @@ from plotly.subplots import make_subplots  # noqa: F401
 import common
 from custom_logger import CustomLogger
 from logmod import logs
-from ollama import OllamaClient
+from models.ollama import OllamaClient
 
 logs(show_level='info', show_color=True)
 logger = CustomLogger(__name__)  # use custom logger
@@ -20,6 +19,9 @@ output_path = common.get_configs("output")
 crowdsourced_data = common.get_configs("crowdsourced_data")
 font_size = common.get_configs("font_size")
 font_family = common.get_configs("font_family")
+
+# Initialise the client for generating text ratings
+client = OllamaClient()
 
 
 class Analysis:
@@ -57,9 +59,6 @@ class Analysis:
         logs(show_level=common.get_configs("logger_level"), show_color=True)
         self.logger = CustomLogger(__name__)
         self.template = common.get_configs('plotly_template')
-
-        # Initialise the client for generating text ratings
-        self.client = OllamaClient()
 
         # Constants (moved from module-level)
         self.save_png = True
@@ -104,47 +103,6 @@ class Analysis:
 
         except ValueError:
             self.logger.error(f"Value error raised when attempting to save image {filename}.")
-
-    def process_csv_files(self, output=common.get_configs("output")):
-        """
-        Process CSV files in the defined subfolders ('with_memory' and 'without_memory')
-        by generating ratings for each text cell (excluding the 'image' column) and saving 
-        the results in an 'analysed' subfolder.
-        """
-        sub_folders = ["with_memory", "without_memory"]
-
-        for sub_folder in sub_folders:
-            folder_path = os.path.join(output, sub_folder)
-            if not os.path.exists(folder_path):
-                self.logger.info(f"Folder not found: {folder_path}")
-                continue
-
-            analysed_folder = os.path.join(folder_path, "analysed")
-            os.makedirs(analysed_folder, exist_ok=True)
-            csv_files = glob.glob(os.path.join(folder_path, "output_*.csv"))
-
-            for file_path in csv_files:
-                try:
-                    df = pd.read_csv(file_path)
-                    self.logger.info(f"Processing {file_path} now....")
-                    columns_to_analyse = [col for col in df.columns if col != "image"]
-
-                    for index, row in df.iterrows():
-                        for col in columns_to_analyse:
-                            text = row[col]
-                            if pd.isna(text) or text == "":
-                                rating = math.nan
-                            else:
-                                rating = self.client.generate_simple_text(
-                                    sentence=text, model="deepseek-r1:14b"
-                                )
-                            df.at[index, col] = rating
-
-                    output_file_path = os.path.join(analysed_folder, os.path.basename(file_path))
-                    df.to_csv(output_file_path, index=False)
-                    self.logger.info(f"Saved analysed file: {output_file_path}")
-                except Exception as e:
-                    self.logger.error(f"Error processing {file_path}: {e}")
 
     def average_llm_results(self, folder_path, image_column="image", output_csv_path="data"):
         """
@@ -420,14 +378,16 @@ class Analysis:
             text_auto=".2f",  # type: ignore
             color_continuous_scale='RdBu_r',
             zmin=-1, zmax=1,
-            title=''
+            title='',
+            aspect="auto",
         )
         fig.update_layout(
             xaxis_title="",
             yaxis_title="",
             width=1600,
-            height=1600,
+            height=900,
             coloraxis_showscale=False,
+            margin=dict(l=0, r=0, t=0, b=0),  # Remove all margins
             font=dict(
                 family=font_family,
                 size=font_size
@@ -449,7 +409,7 @@ class Analysis:
 
         # Save figure using class method
         self.save_plotly_figure(fig, f"spearman_correlation_matrix_{memory_type}",
-                                width=1600, height=1600, save_final=save_final)
+                                width=1600, height=900, save_final=save_final)
 
 
 # Example usage
@@ -457,7 +417,7 @@ if __name__ == "__main__":
     analysis = Analysis()
     # Loop over both configurations
     for memory_type in ["with_memory", "without_memory"]:
-        # analysis.process_csv_files()
+        # client.process_csv_files()
         folder_path = os.path.join(output_path, memory_type, "analysed")
 
         # Skip if folder doesn't exist or is empty
@@ -472,19 +432,19 @@ if __name__ == "__main__":
             output_csv_path=os.path.join(output_path, f"avg_{memory_type}.csv")
         )
 
-        analysis.plot_ehmi_vs_llm(
-            mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
-            ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
-            avg_df=avg_df,
-            memory_type=memory_type, save_final=True
-        )
+        # analysis.plot_ehmi_vs_llm(
+        #     mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
+        #     ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
+        #     avg_df=avg_df,
+        #     memory_type=memory_type, save_final=True
+        # )
 
-        figures = analysis.plot_individual_ehmi_vs_llm(
-            mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
-            ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
-            avg_df=avg_df,
-            memory_type=memory_type, save_final=True
-        )
+        # figures = analysis.plot_individual_ehmi_vs_llm(
+        #     mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
+        #     ehmi_csv_path=os.path.join(crowdsourced_data, "ehmis.csv"),
+        #     avg_df=avg_df,
+        #     memory_type=memory_type, save_final=True
+        # )
 
         analysis.plot_spearman_correlation(
             mapping_csv_path=os.path.join(crowdsourced_data, "mapping.csv"),
